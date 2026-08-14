@@ -92,6 +92,8 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
 .prog-bar{height:100%;background:#2e7d32;border-radius:3px;transition:width .3s}
 .empty{padding:26px 14px;text-align:center;color:#999;font-size:12px;background:#fafafa;border-radius:8px;border:1px dashed #ddd;line-height:1.6}
 .eco{color:#2e7d32;font-weight:bold}
+.falta-sim{color:#c62828;font-weight:bold}
+.falta-nao{color:#2e7d32;font-weight:bold}
 .win{background:#e8f5e9!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media print{.tabs,.backup-btns,.wbar .hint{display:none!important}.section{display:block!important;box-shadow:none;page-break-after:always}}
@@ -209,20 +211,49 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
 <div id="compras" class="section">
   <h2>Lista de Compras</h2>
   <div class="sgrid" id="cmp-cards"></div>
+  <h3>Malha PV já comprada pela DanCERA</h3>
   <div class="tbl-wrap">
     <table>
-      <thead><tr><th>Tecido / cor</th><th class="r">Peças</th><th class="r">Metros do encaixe</th><th class="r">Perda 10%</th><th class="r">Comprar</th><th class="r">Área (m²)</th></tr></thead>
+      <thead><tr><th>Cor</th><th class="r">Comprado</th><th class="r">Rende</th><th class="r">Já cortado</th><th class="r">Disponível</th></tr></thead>
+      <tbody id="est-body"></tbody>
+      <tfoot id="est-foot"></tfoot>
+    </table>
+  </div>
+  <p class="note">A malha PV é vendida por quilo: <b>1 kg rende 2,5 m lineares na largura de 0,94 m</b>. O peso define a área de tecido (2,35 m² por kg), não o comprimento — por isso, ao trocar a largura no topo da página, os metros disponíveis se ajustam sozinhos: o mesmo quilo dá menos metros num tecido mais largo, e a mesma área. Os 0,83 m já cortados da branca estão descontados.</p>
+
+  <h3>Confronto com o pedido</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Tecido / cor</th><th class="r">Peças</th><th class="r">Necessário</th><th class="r">Disponível</th><th class="r">Falta</th><th class="r">+10%</th><th class="r">Comprar</th></tr></thead>
       <tbody id="cmp-body"></tbody>
       <tfoot id="cmp-foot"></tfoot>
     </table>
   </div>
-  <p class="note">Metragem do encaixe = soma real do infesto (folhas cheias), não a soma peça a peça — é assim que o tecido sai do rolo. A margem de 10% cobre ponta de rolo, defeito e ajuste de encaixe; se o fornecedor cortar em metro fechado, arredonde para cima.</p>
+  <p class="note"><b>Necessário</b> = soma real do infesto (folhas cheias), não a soma peça a peça — é assim que o tecido sai do rolo, e já inclui a tira de gola. A margem de 10% incide só sobre o que falta comprar, cobrindo ponta de rolo, defeito e ajuste de encaixe; se o fornecedor vender por quilo fechado, arredonde o kg para cima. Moletom não entra aqui: é outro tecido, não malha PV.</p>
 </div>
 
 <script>
 var SIZES=['PP','P','M','G','GG'];
 var COLORS=[{k:'preto',n:'Preto',dot:'#222'},{k:'branco',n:'Branco',dot:'#fff'}];
-var PECAS=[{k:'cam',n:'Camiseta',cls:'b-cam'},{k:'bab',n:'Baby look',cls:'b-bab'},{k:'mol',n:'Moletom fem. gola careca',cls:'b-mol'}];
+/* pv = peça feita em malha PV (a mesma malha das camisetas) */
+var PECAS=[{k:'cam',n:'Camiseta',cls:'b-cam',pv:1},{k:'bab',n:'Baby look',cls:'b-bab',pv:1},{k:'mol',n:'Moletom fem. gola careca',cls:'b-mol',pv:0}];
+function ehPV(pk){for(var i=0;i<PECAS.length;i++){if(PECAS[i].k===pk)return !!PECAS[i].pv;}return false;}
+
+/* Malha PV: 1 kg rende 2,5 m lineares na largura de 0,94 m.
+   O peso define a AREA, não o comprimento — por isso guardamos m²/kg e
+   convertemos para metros conforme a largura escolhida. */
+var PV_M_POR_KG_094=2.5, PV_LARG_REF=0.94;
+var PV_AREA_KG=PV_M_POR_KG_094*PV_LARG_REF;           /* 2,35 m² por kg */
+/* comprado pela DanCERA na Leve Sonho; usado_m medido na largura de referência */
+var ESTOQUE={preto:{kg:15,usado_m:0},branco:{kg:10,usado_m:0.83}};
+function estoqueCor(ck,larg){
+  var e=ESTOQUE[ck];
+  if(!e)return null;
+  var areaTotal=e.kg*PV_AREA_KG, areaUsada=e.usado_m*PV_LARG_REF;
+  var areaDisp=areaTotal-areaUsada;
+  return {kg:e.kg,usado_m:e.usado_m,areaTotal:areaTotal,areaDisp:areaDisp,
+          metros:areaDisp/larg,metrosRef:areaDisp/PV_LARG_REF};
+}
 var FOLHAS_INFESTO=5;
 var PERDA=0.10;
 /* tira de gola da camiseta: 71 cm de comprimento x 3 cm de largura,
@@ -510,10 +541,28 @@ function renderRend(){
 /* ---------- COMPRAS ---------- */
 function renderCompras(){
   var tb=document.getElementById('cmp-body'),html='',larg=parseFloat(LARG);
-  var tPc=0,tMet=0,tCom=0,tArea=0;
+  var tPc=0,tMet=0,tDisp=0,tFalta=0,tCom=0,tKg=0;
+
+  /* estoque de malha PV comprada */
+  var eh='',ekg=0,edisp=0,eusado=0;
+  for(var c0=0;c0<COLORS.length;c0++){
+    var e=estoqueCor(COLORS[c0].k,larg);
+    if(!e)continue;
+    ekg+=e.kg;edisp+=e.metros;eusado+=e.usado_m;
+    eh+='<tr><td><span class="dot" style="background:'+COLORS[c0].dot+'"></span>Malha PV '+COLORS[c0].n+'</td>'
+      +'<td class="r">'+nm1(e.kg)+' kg</td>'
+      +'<td class="r">'+nm2(e.kg*PV_AREA_KG/larg)+' m</td>'
+      +'<td class="r">'+(e.usado_m?'−'+nm2(e.usado_m)+' m':'—')+'</td>'
+      +'<td class="r"><b>'+nm2(e.metros)+' m</b></td></tr>';
+  }
+  document.getElementById('est-body').innerHTML=eh;
+  document.getElementById('est-foot').innerHTML='<tr><td>TOTAL</td><td class="r">'+nm1(ekg)+' kg</td><td class="r">—</td>'
+    +'<td class="r">'+(eusado?'−'+nm2(eusado)+' m':'—')+'</td><td class="r">'+nm2(edisp)+' m</td></tr>';
+
   for(var c=0;c<COLORS.length;c++){
     var pc=0,met=0;
     for(var i=0;i<PECAS.length;i++){
+      if(!ehPV(PECAS[i].k))continue;
       for(var s=0;s<SIZES.length;s++){
         var q=getQ(PECAS[i].k,SIZES[s],COLORS[c].k);
         if(!q)continue;
@@ -526,20 +575,28 @@ function renderCompras(){
     if(!pc)continue;
     var ti2=tiraInfo(qtdTiraCor(COLORS[c].k),larg);
     met+=ti2.metros;
-    var perda=met*PERDA,comprar=met+perda;
-    tPc+=pc;tMet+=met;tCom+=comprar;tArea+=comprar*larg;
-    html+='<tr><td><span class="dot" style="background:'+COLORS[c].dot+'"></span>Malha '+COLORS[c].n+' · '+LARG.replace('.',',')+' m'
-      +(ti2.metros?'<br><span style="font-size:10.5px;color:#777">inclui '+nm2(ti2.metros)+' m de tira de gola ('+ti2.faixas+' faixa'+(ti2.faixas>1?'s':'')+')</span>':'')+'</td>'
-      +'<td class="r">'+pc+'</td><td class="r">'+nm2(met)+' m</td><td class="r">'+nm2(perda)+' m</td>'
-      +'<td class="r"><b>'+nm2(comprar)+' m</b></td><td class="r">'+nm2(comprar*larg)+'</td></tr>';
+    var est=estoqueCor(COLORS[c].k,larg),disp=est?est.metros:0;
+    var falta=Math.max(0,met-disp),sobra=Math.max(0,disp-met);
+    var perda=falta*PERDA,comprar=falta+perda;
+    var kg=comprar*larg/PV_AREA_KG;
+    tPc+=pc;tMet+=met;tDisp+=disp;tFalta+=falta;tCom+=comprar;tKg+=kg;
+    html+='<tr'+(falta>0?' style="background:#fff5f5"':'')+'><td><span class="dot" style="background:'+COLORS[c].dot+'"></span>Malha PV '+COLORS[c].n
+      +(ti2.metros?'<br><span style="font-size:10.5px;color:#777">inclui '+nm2(ti2.metros)+' m de tira de gola</span>':'')+'</td>'
+      +'<td class="r">'+pc+'</td><td class="r">'+nm2(met)+' m</td>'
+      +'<td class="r">'+nm2(disp)+' m</td>'
+      +'<td class="r">'+(falta>0?'<span class="falta-sim">'+nm2(falta)+' m</span>':'<span class="falta-nao">sobra '+nm2(sobra)+' m</span>')+'</td>'
+      +'<td class="r">'+(falta>0?nm2(perda)+' m':'—')+'</td>'
+      +'<td class="r">'+(falta>0?'<b>'+nm2(comprar)+' m</b><br><span style="font-size:10.5px;color:#777">≈ '+nm1(kg)+' kg</span>':'<b>—</b>')+'</td></tr>';
   }
-  tb.innerHTML=html||'<tr><td colspan="6" style="text-align:center;color:#999;padding:22px">Sem quantidades lançadas — preencha a aba <b>Pedido</b>.</td></tr>';
-  document.getElementById('cmp-foot').innerHTML=html?'<tr><td>TOTAL</td><td class="r">'+tPc+'</td><td class="r">'+nm2(tMet)+' m</td><td class="r">'+nm2(tCom-tMet)+' m</td><td class="r">'+nm2(tCom)+' m</td><td class="r">'+nm2(tArea)+'</td></tr>':'';
+  tb.innerHTML=html||'<tr><td colspan="7" style="text-align:center;color:#999;padding:22px">Sem quantidades lançadas — preencha a aba <b>Pedido</b>.</td></tr>';
+  document.getElementById('cmp-foot').innerHTML=html?'<tr><td>TOTAL</td><td class="r">'+tPc+'</td><td class="r">'+nm2(tMet)+' m</td>'
+    +'<td class="r">'+nm2(tDisp)+' m</td><td class="r">'+nm2(tFalta)+' m</td><td class="r">'+nm2(tCom-tFalta)+' m</td>'
+    +'<td class="r">'+(tCom?nm2(tCom)+' m · ≈ '+nm1(tKg)+' kg':'—')+'</td></tr>':'';
   document.getElementById('cmp-cards').innerHTML=
-    card(nm2(tCom)+' m','comprar no total','')
-    +card(nm2(tMet)+' m','metragem do encaixe','teal')
-    +card(nm2(tCom-tMet)+' m','margem de perda (10%)','ora')
-    +card(nm2(tArea)+' m²','área comprada','grn');
+    card(nm2(tMet)+' m','necessário para o pedido','')
+    +card(nm2(tDisp)+' m','disponível em malha PV','teal')
+    +card(nm2(tFalta)+' m',tFalta>0?'falta de tecido':'nenhuma falta',tFalta>0?'red':'grn')
+    +(tCom?card(nm2(tCom)+' m','comprar com 10%','ora')+card(nm1(tKg)+' kg','a comprar em quilo','ora'):'');
 }
 
 function render(){renderPedido();renderEnc();renderRend();renderCompras();}
