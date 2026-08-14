@@ -200,7 +200,7 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
       <tfoot id="ped-foot"></tfoot>
     </table>
   </div>
-  <p class="note"><b>Tira de gola:</b> cada camiseta leva uma tira de 71 × 3 cm que precisa ser cortada em pé, no sentido do fio — por isso ela consome 0,71 m de comprimento de tecido e entra somada ao total, e não dentro do encaixe da peça. Como a tira tem só 3 cm de largura, várias saem lado a lado na mesma faixa: no tecido de 0,94 m cabem 31 tiras por faixa, no de 1,22 m cabem 40. Baby look e moletom não levam tira.</p>
+  <p class="note"><b>Tira de gola:</b> <b>camiseta e baby look</b> levam uma tira de 71 × 3 cm cada, cortada em pé, no sentido do fio — por isso ela consome 0,71 m de comprimento de tecido e entra somada ao total, e não dentro do encaixe da peça. Como a tira tem só 3 cm de largura, várias saem lado a lado na mesma faixa: no tecido de 0,94 m cabem 31 tiras por faixa, no de 1,22 m cabem 40. O moletom não leva tira; a regata ainda precisa ser conferida.</p>
   <p class="note">A coluna <b>Metros</b> conta folha cheia, não peça a peça — é o mesmo número do encaixe e da lista de compras. No tecido de 0,94 m dá no mesmo, porque cada folha rende 1 peça; no de 1,22 m, onde a folha rende 2, uma quantidade ímpar gasta a folha inteira e sobra meia folha.</p>
   <p class="note">Peças e tamanhos listados são os que têm encaixe medido. Se a ficha trouxer um tamanho sem medição (por exemplo camiseta PP ou moletom M), me avise que eu acrescento assim que vocês medirem na mesa.</p>
 </div>
@@ -325,10 +325,10 @@ function estoqueCor(ck,larg){
 }
 var FOLHAS_INFESTO=5;
 var PERDA=0.10;
-/* tira de gola da camiseta: 71 cm de comprimento x 3 cm de largura,
+/* tira de gola (camiseta e baby look): 71 cm de comprimento x 3 cm de largura,
    cortada em pe (no sentido do fio) -> consome 0,71 m de comprimento de tecido.
    Varias tiras cabem lado a lado na largura, entao uma faixa de 0,71 m atende muitas pecas. */
-var TIRA={len:0.71,larg:0.03,pecas:['cam']};
+var TIRA={len:0.71,larg:0.03,pecas:['cam','bab']};
 function tiraInfo(qtd,larg){
   if(!qtd)return {tiras:0,porFaixa:0,faixas:0,metros:0};
   var porFaixa=Math.floor(larg/TIRA.larg);
@@ -336,7 +336,7 @@ function tiraInfo(qtd,larg){
   return {tiras:qtd,porFaixa:porFaixa,faixas:faixas,metros:faixas*TIRA.len};
 }
 function usaTira(pk){return TIRA.pecas.indexOf(pk)>=0;}
-/* total de camisetas de uma cor na largura atual */
+/* total de peças que levam tira, por cor, na largura atual */
 function qtdTiraCor(ck){
   var t=0;
   for(var i=0;i<PECAS.length;i++){
@@ -585,7 +585,7 @@ function renderPedido(){
       +'<td class="r"><b>'+qt+'</b></td><td class="r">'+nm3(mpp)+' m</td><td class="r">'+(qt?nm2(mt)+' m':'—')+'</td></tr>';
     lastPk=l.pk;
   }
-  /* tiras de gola das camisetas: uma linha por cor */
+  /* tiras de gola: uma linha por cor */
   var tiraMet=0;
   for(var c2=0;c2<COLORS.length;c2++){
     var qc=qtdTiraCor(COLORS[c2].k);
@@ -656,19 +656,6 @@ function renderEnc(){
           +'<div class="c-num hi">'+nm2(met)+' m</div></div>';
       }
       if(!rows)continue;
-      var bTira=null;
-      if(usaTira(pk)&&bQtd){
-        bTira=tiraInfo(bQtd,parseFloat(LARG));
-        bMet+=bTira.metros;
-        rows+='<div class="enc-row" style="background:#f3eefa">'
-          +'<div class="c-chk"></div>'
-          +'<div class="e-nm"><b>Tira de gola</b> <span style="color:#777">71 × 3 cm · em pé, no sentido do fio</span></div>'
-          +'<div class="c-num">'+bTira.tiras+' tiras</div>'
-          +'<div class="c-num">'+bTira.faixas+' faixa'+(bTira.faixas>1?'s':'')+'</div>'
-          +'<div class="c-num">'+bTira.porFaixa+'/faixa</div>'
-          +'<div class="c-num">—</div>'
-          +'<div class="c-num hi">'+nm2(bTira.metros)+' m</div></div>';
-      }
       totFol+=bFol;totMet+=bMet;totPc+=bPc;totInf+=bInf;totFre+=bFre;
       html+='<div class="enc-bloco">'
         +'<div class="enc-bloco-hdr"><span><span class="dot" style="background:'+COLORS[c].dot+'"></span>'+PECAS[i].n+' — '+COLORS[c].n
@@ -678,10 +665,32 @@ function renderEnc(){
         +rows
         +'<div class="enc-resumo"><span class="enc-tag">'+bFol+' folhas</span><span class="enc-tag ok">'+bPc+' peças cortadas</span>'
         +(bFre?'<span class="enc-tag warn">'+bFre+' frentes sobrando — encaixar em par elimina</span>':'<span class="enc-tag ok">sem sobra de frente</span>')
-        +(bTira?'<span class="enc-tag">tira de gola: +'+nm2(bTira.metros)+' m</span>':'')
         +'<span class="enc-tag warn">'+nm2(bMet)+' m de tecido</span></div>'
         +'</div>';
     }
+  }
+  /* tira de gola: uma faixa por COR, somando camiseta + baby look.
+     Fica num bloco próprio para não abrir faixa separada por peça. */
+  for(var ct=0;ct<COLORS.length;ct++){
+    var qct=qtdTiraCor(COLORS[ct].k);
+    if(!qct)continue;
+    var ti=tiraInfo(qct,parseFloat(LARG));
+    totMet+=ti.metros;
+    var keyT=LARG+'|tira|'+COLORS[ct].k;
+    var doneT=st.cortado[keyT]?1:0;total++;if(doneT)feitos++;
+    html+='<div class="enc-bloco">'
+      +'<div class="enc-bloco-hdr"><span><span class="dot" style="background:'+COLORS[ct].dot+'"></span>Tira de gola — '+COLORS[ct].n
+      +'<span class="sub"> · 71 × 3 cm · em pé, no sentido do fio</span></span><span class="sub">'+ti.tiras+' tiras · '+nm2(ti.metros)+' m</span></div>'
+      +'<div class="enc-inf-hdr"><span class="inf-badge">'+ti.faixas+' faixa'+(ti.faixas>1?'s':'')+'</span> cabem '+ti.porFaixa+' tiras lado a lado nesta largura</div>'
+      +'<div class="enc-row'+(doneT?' cortado':'')+'">'
+      +'<div class="c-chk"><input type="checkbox" '+(doneT?'checked':'')+' aria-label="Tira de gola '+COLORS[ct].n+' cortada" onchange="onChk(this,\''+keyT+'\')"></div>'
+      +'<div class="e-nm"><b>Camiseta + baby look</b>'+(doneT?selo(keyT):'')+'</div>'
+      +'<div class="c-num">'+ti.tiras+' tiras</div>'
+      +'<div class="c-num">'+ti.faixas+' faixa'+(ti.faixas>1?'s':'')+'</div>'
+      +'<div class="c-num">'+ti.porFaixa+'/faixa</div>'
+      +'<div class="c-num">—</div>'
+      +'<div class="c-num hi">'+nm2(ti.metros)+' m</div></div>'
+      +'</div>';
   }
   host.innerHTML=html||'<div class="empty">Nenhuma quantidade lançada ainda.<br>Preencha a ficha na aba <b>Pedido</b> que o encaixe aparece aqui.</div>';
   var pct=total?Math.round(feitos/total*100):0;
@@ -876,7 +885,7 @@ function renderRisco(){
     +'<div class="risco-hdr"><span>Tira de gola</span><span class="med">71 × 3 cm</span></div>'
     +'<div class="risco-svg">'+riscoTiraSVG(larg)+'</div>'
     +'<div class="risco-pe">Cortada <b>em pé, no sentido do fio</b> — por isso ocupa 0,71 m de comprimento.'
-    +'<br>Cabem <b>'+Math.floor(larg/TIRA.larg)+' tiras</b> nesta faixa, ou seja '+Math.floor(larg/TIRA.larg)+' camisetas.</div>'
+    +'<br>Cabem <b>'+Math.floor(larg/TIRA.larg)+' tiras</b> nesta faixa — atende '+Math.floor(larg/TIRA.larg)+' peças entre camisetas e baby looks.</div>'
     +'</div>';
   host.innerHTML=html;
 }
