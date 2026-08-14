@@ -771,9 +771,11 @@ var MOLDE={
   manga:'M0,0.30 C0.20,0 0.80,0 1,0.30 L0.87,1 L0.13,1 Z'
 };
 function svgPeca(d,x,y,w,h,fill){
+  /* non-scaling-stroke já ignora a escala do transform — a espessura vai
+     em px do desenho final, sem dividir por w/h. */
   return '<path d="'+d+'" transform="translate('+nmx(x)+','+nmx(y)+') scale('+nmx(w)+','+nmx(h)+')" '
-    +'fill="'+fill+'" stroke="#1a1a2e" stroke-width="'+nmx(1.2/Math.max(w,h))+'" '
-    +'vector-effect="non-scaling-stroke" stroke-linejoin="round"/>';
+    +'fill="'+fill+'" stroke="#000" stroke-width="1.8" '
+    +'vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>';
 }
 function nmx(v){return Math.round(v*1000)/1000;}
 
@@ -794,10 +796,10 @@ function riscoSVG(pk,tam,r,larg){
   var s='<svg viewBox="0 0 '+nmx(vbW)+' '+nmx(vbH)+'" role="img" aria-label="Risco do encaixe '+pk+' '+tam+'">';
   /* tecido tubular: os 0,94 m são a largura na mesa, com dupla camada.
      As duas linhas nas laterais representam as dobras do tubo. */
-  s+='<rect x="'+ox+'" y="'+oy+'" width="'+nmx(W)+'" height="'+nmx(H)+'" fill="#eceff1" stroke="#90a4ae" stroke-width="1"/>';
-  s+='<line x1="'+nmx(ox+3)+'" y1="'+oy+'" x2="'+nmx(ox+3)+'" y2="'+nmx(oy+H)+'" stroke="#90a4ae" stroke-width="1" stroke-dasharray="3 3"/>'
-    +'<line x1="'+nmx(ox+W-3)+'" y1="'+oy+'" x2="'+nmx(ox+W-3)+'" y2="'+nmx(oy+H)+'" stroke="#90a4ae" stroke-width="1" stroke-dasharray="3 3"/>'
-    +'<text x="'+nmx(ox+W/2)+'" y="'+nmx(oy+H-5)+'" text-anchor="middle" font-family="Arial" font-size="9.5" fill="#90a4ae">'
+  s+='<rect x="'+ox+'" y="'+oy+'" width="'+nmx(W)+'" height="'+nmx(H)+'" fill="#cfd8dc" stroke="#546e7a" stroke-width="1.2"/>';
+  s+='<line x1="'+nmx(ox+3)+'" y1="'+oy+'" x2="'+nmx(ox+3)+'" y2="'+nmx(oy+H)+'" stroke="#78909c" stroke-width="1" stroke-dasharray="3 3"/>'
+    +'<line x1="'+nmx(ox+W-3)+'" y1="'+oy+'" x2="'+nmx(ox+W-3)+'" y2="'+nmx(oy+H)+'" stroke="#78909c" stroke-width="1" stroke-dasharray="3 3"/>'
+    +'<text x="'+nmx(ox+W/2)+'" y="'+nmx(oy+H-5)+'" text-anchor="middle" font-family="Arial" font-size="9.5" fill="#546e7a">'
     +'tubular · dupla camada</text>';
   if(mangaLado){
     /* mangas numa coluna à direita, corpos ocupando o resto da largura */
@@ -848,11 +850,11 @@ function riscoTiraSVG(larg){
   var porFaixa=Math.floor(larg/TIRA.larg);
   var mostrar=Math.min(porFaixa,14);           /* desenha algumas, não as 31 */
   var s='<svg viewBox="0 0 '+nmx(W+padL+padR)+' '+nmx(H+padT+padB)+'" role="img" aria-label="Risco da tira de gola">';
-  s+='<rect x="'+ox+'" y="'+oy+'" width="'+nmx(W)+'" height="'+nmx(H)+'" fill="#eceff1" stroke="#90a4ae" stroke-width="1"/>';
+  s+='<rect x="'+ox+'" y="'+oy+'" width="'+nmx(W)+'" height="'+nmx(H)+'" fill="#cfd8dc" stroke="#546e7a" stroke-width="1.2"/>';
   var wt=TIRA.larg*PX;
   for(var i=0;i<mostrar;i++){
     s+='<rect x="'+nmx(ox+2+i*(wt+1.5))+'" y="'+nmx(oy+3)+'" width="'+nmx(wt)+'" height="'+nmx(H-6)+'" '
-      +'fill="#fff" stroke="#1a1a2e" stroke-width="1"/>';
+      +'fill="#fff" stroke="#000" stroke-width="1.4"/>';
   }
   s+='<text x="'+nmx(ox+W-6)+'" y="'+nmx(oy+H/2)+'" text-anchor="end" font-family="Arial" font-size="11" fill="#777">…'
     +porFaixa+' tiras</text>';
