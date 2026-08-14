@@ -215,7 +215,8 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
 <div id="risco" class="section">
   <h2>Risco do Encaixe</h2>
   <p class="note" style="margin-top:0">Cada desenho é o <b>tecido em escala real</b>: a largura e o comprimento do encaixe são exatamente os que medimos na mesa, e as peças estão desenhadas na proporção em que foram encaixadas. Serve para enxergar quanto do tecido vira peça e quanto vira retalho. As linhas são contornos simplificados do molde, não o molde de corte.</p>
-  <div class="banner" style="margin-top:10px"><b>Os dois tecidos são tubulares.</b> A largura que aparece — 0,94 m ou 1,22 m — é a medida na mesa, já com o tubo achatado, e por isso o corte pega <b>duas camadas de uma vez</b>: cada contorno riscado sai como duas peças. É por isso que aparece <b>uma manga só</b> no risco: ela já sai em par. É também o que produz a frente que sobra no tecido de 0,94 m — o rendimento se conta por contorno, não por peça.</div>
+  <div class="banner" style="margin-top:10px"><b>Os dois tecidos são tubulares.</b> A largura que aparece — 0,94 m ou 1,22 m — é a medida na mesa, com o tubo achatado, e o corte pega <b>duas camadas de uma vez</b>. Um molde riscado <b>aberto</b> sai em par; um molde riscado <b>na dobra</b> sai inteiro, só um. É por isso que a manga aparece uma vez só no risco — ela já sai em par.<br><br>
+  <b>De onde vem a frente que sobra:</b> no tecido de 0,94 m não cabem frente e costas abertas lado a lado. Então a <b>costas vai na dobra e sai 1</b>, e a <b>frente vai aberta e sai 2</b> — o que fecha uma camiseta e deixa uma frente sobrando. No tecido de 1,22 m as duas cabem abertas, saem 2 de cada, e o encaixe fecha <b>2 camisetas sem sobra nenhuma</b>.</div>
   <div class="risco-grid" id="risco-body"></div>
 </div>
 
@@ -779,6 +780,13 @@ function svgPeca(d,x,y,w,h,fill){
 }
 function nmx(v){return Math.round(v*1000)/1000;}
 
+function svgRotulo(x,y,w,h,nome,sub){
+  var cx=x+w/2, cy=y+h/2;
+  return '<text x="'+nmx(cx)+'" y="'+nmx(cy-2)+'" text-anchor="middle" font-family="Arial" '
+    +'font-size="9.5" font-weight="bold" fill="#1a1a2e">'+nome+'</text>'
+    +'<text x="'+nmx(cx)+'" y="'+nmx(cy+9)+'" text-anchor="middle" font-family="Arial" '
+    +'font-size="8.5" fill="#555">'+sub+'</text>';
+}
 function riscoSVG(pk,tam,r,larg){
   var PX=190/larg;                       /* mesma escala para todos na largura atual */
   var W=larg*PX, H=r.len*PX;
@@ -801,29 +809,47 @@ function riscoSVG(pk,tam,r,larg){
     +'<line x1="'+nmx(ox+W-3)+'" y1="'+oy+'" x2="'+nmx(ox+W-3)+'" y2="'+nmx(oy+H)+'" stroke="#78909c" stroke-width="1" stroke-dasharray="3 3"/>'
     +'<text x="'+nmx(ox+W/2)+'" y="'+nmx(oy+H-5)+'" text-anchor="middle" font-family="Arial" font-size="9.5" fill="#546e7a">'
     +'tubular · dupla camada</text>';
+  /* No 0,94 m (1 un) a COSTAS vai na dobra do tecido e sai 1; a FRENTE vai
+     aberta e sai 2 — daí a frente que sobra. No 1,22 m as duas vão abertas
+     e saem 2 de cada, fechando 2 peças sem sobra. */
+  var costasNaDobra=(r.un===1);
+  var faixaMangas=(ehBL?0.19:0.23)*PX;
+  var hCorpo=H-faixaMangas-3*m;
+  var wCorpo=(W-3*m)/2;
+  var yCorpo=oy+faixaMangas+m;
+
   if(mangaLado){
-    /* mangas numa coluna à direita, corpos ocupando o resto da largura */
     var colM=0.26*W;
-    var wCorpoL=(W-colM-3*m)/2;
-    var hCorpoL=H-2*m;
-    s+=svgPeca(corpoD, ox+m,              oy+m, wCorpoL, hCorpoL, '#fff');
-    s+=svgPeca(corpoD, ox+2*m+wCorpoL,    oy+m, wCorpoL, hCorpoL, '#fff');
+    wCorpo=(W-colM-3*m)/2;
+    hCorpo=H-2*m; yCorpo=oy+m;
     var hm=(H-(nMangas+1)*m)/nMangas;
     for(var j=0;j<nMangas;j++){
       s+=svgPeca(MOLDE.manga, ox+W-colM+m, oy+m+j*(hm+m), colM-2*m, hm, '#fff');
+      s+=svgRotulo(ox+W-colM+m, oy+m+j*(hm+m), colM-2*m, hm, 'MANGA','sai 2');
     }
   }else{
-    /* manga(s) na faixa de cima, centralizadas; corpos embaixo */
-    var faixaMangas=(ehBL?0.19:0.23)*PX;
-    var hCorpo=H-faixaMangas-3*m;
-    var wCorpo=(W-3*m)/2;
     var wm=Math.min((W-3*m)/2,(W-(nMangas+1)*m)/nMangas);
     var xIni=ox+(W-(nMangas*wm+(nMangas-1)*m))/2;
     for(var i=0;i<nMangas;i++){
       s+=svgPeca(MOLDE.manga, xIni+i*(wm+m), oy+m, wm, faixaMangas-m, '#fff');
+      s+=svgRotulo(xIni+i*(wm+m), oy+m, wm, faixaMangas-m, 'MANGA','sai 2');
     }
-    s+=svgPeca(corpoD, ox+m,          oy+faixaMangas+m, wCorpo, hCorpo, '#fff');
-    s+=svgPeca(corpoD, ox+2*m+wCorpo, oy+faixaMangas+m, wCorpo, hCorpo, '#fff');
+  }
+
+  /* COSTAS à esquerda, encostada na dobra quando é o caso; FRENTE à direita */
+  var xCostas=costasNaDobra?ox+1:ox+m;
+  s+=svgPeca(corpoD, xCostas, yCorpo, wCorpo, hCorpo, '#fff');
+  s+=svgRotulo(xCostas, yCorpo, wCorpo, hCorpo, 'COSTAS', costasNaDobra?'na dobra · sai 1':'aberta · sai 2');
+  var xFrente=ox+W-wCorpo-m;
+  s+=svgPeca(corpoD, xFrente, yCorpo, wCorpo, hCorpo, '#fff');
+  s+=svgRotulo(xFrente, yCorpo, wCorpo, hCorpo, 'FRENTE','aberta · sai 2');
+
+  /* marca a dobra do tubo onde a costas está encostada */
+  if(costasNaDobra){
+    s+='<line x1="'+nmx(ox+1)+'" y1="'+oy+'" x2="'+nmx(ox+1)+'" y2="'+nmx(oy+H)+'" '
+      +'stroke="#7B1FA2" stroke-width="2.5"/>'
+      +'<text x="'+nmx(ox+7)+'" y="'+nmx(oy+H-14)+'" font-family="Arial" font-size="8.5" '
+      +'font-weight="bold" fill="#7B1FA2" transform="rotate(-90 '+nmx(ox+7)+' '+nmx(oy+H-14)+')">DOBRA</text>';
   }
 
   /* cotas */
@@ -889,9 +915,11 @@ function renderRisco(){
         +'<div class="risco-svg">'+riscoSVG(pk,tam,r,larg)+'</div>'
         +'<div class="risco-pe">Rende <b>'+r.un+' peça'+(r.un>1?'s':'')+'</b> por folha'
         +(r.fr?' <span class="risco-sobra">+ '+r.fr+' frente que sobra</span>':'')
-        +'<br>Riscado: <b>2 corpos</b> + <b>'+r.un+' manga'+(r.un>1?'s':'')+'</b> '
-        +(r.mp==='lado'?'na lateral':'na faixa de cima')+'.'
-        +'<br>Tubular: cada contorno corta <b>2 camadas</b> — a manga já sai em par, por isso risca-se uma só.'
+        +'<br>Riscado: '+(r.un===1
+          ? '<b>costas na dobra</b> (sai 1) + <b>frente aberta</b> (sai 2) + <b>1 manga</b> (sai 2)'
+          : '<b>costas aberta</b> (sai 2) + <b>frente aberta</b> (sai 2) + <b>2 mangas</b> (sai 4)')
+        +', manga '+(r.mp==='lado'?'na lateral':'na faixa de cima')+'.'
+        +'<br>Tubular: o contorno aberto corta <b>2 camadas</b> e sai em par; o que vai <b>na dobra</b> sai inteiro, só 1.'
         +'<br>'+nm2(area)+' m² na mesa · <b>'+nm3(areaPc)+' m² por peça</b></div>'
         +'</div>';
     }
