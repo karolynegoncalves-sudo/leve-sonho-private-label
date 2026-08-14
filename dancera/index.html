@@ -215,7 +215,7 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
 <div id="risco" class="section">
   <h2>Risco do Encaixe</h2>
   <p class="note" style="margin-top:0">Cada desenho é o <b>tecido em escala real</b>: a largura e o comprimento do encaixe são exatamente os que medimos na mesa, e as peças estão desenhadas na proporção em que foram encaixadas. Serve para enxergar quanto do tecido vira peça e quanto vira retalho. As linhas são contornos simplificados do molde, não o molde de corte.</p>
-  <div class="banner" style="margin-top:10px"><b>Os dois tecidos são tubulares.</b> A largura que aparece — 0,94 m ou 1,22 m — é a medida na mesa, já com o tubo achatado, e por isso o corte pega <b>duas camadas de uma vez</b>: cada contorno riscado sai como duas peças. É exatamente isso que produz a frente que sobra no tecido de 0,94 m, e é por isso que o rendimento é contado por contorno, não por peça.</div>
+  <div class="banner" style="margin-top:10px"><b>Os dois tecidos são tubulares.</b> A largura que aparece — 0,94 m ou 1,22 m — é a medida na mesa, já com o tubo achatado, e por isso o corte pega <b>duas camadas de uma vez</b>: cada contorno riscado sai como duas peças. É por isso que aparece <b>uma manga só</b> no risco: ela já sai em par. É também o que produz a frente que sobra no tecido de 0,94 m — o rendimento se conta por contorno, não por peça.</div>
   <div class="risco-grid" id="risco-body"></div>
 </div>
 
@@ -353,7 +353,7 @@ function qtdTiraCor(ck){
 var REND={
  '0.94':{
   cam:{P:{len:0.91,un:1,fr:1,obs:'1 un + 1 frente'},M:{len:0.93,un:1,fr:1,obs:'1 un + 1 frente'},G:{len:0.96,un:1,fr:1,obs:'1 un + 1 frente'},GG:{len:0.99,un:1,fr:1,obs:'1 un + 1 frente'}},
-  bab:{PP:{len:0.75,un:1,fr:1,obs:'1 un + 1 frente'},P:{len:0.77,un:1,fr:1,obs:'1 un + 1 frente'},M:{len:0.91,un:1,fr:1,obs:'1 un + 1 frente'},G:{len:0.95,un:1,fr:1,obs:'1 un + 1 frente'},GG:{len:1.00,un:1,fr:1,obs:'1 un + 1 frente'}},
+  bab:{PP:{len:0.75,un:1,fr:1,mp:'lado',obs:'1 un + 1 frente'},P:{len:0.77,un:1,fr:1,mp:'lado',obs:'1 un + 1 frente'},M:{len:0.91,un:1,fr:1,obs:'1 un + 1 frente'},G:{len:0.95,un:1,fr:1,obs:'1 un + 1 frente'},GG:{len:1.00,un:1,fr:1,obs:'1 un + 1 frente'}},
   reg:{},
   mol:{P:{len:1.82,un:2,fr:0,obs:'encaixe em par, sem sobra; avulso sai 1,20 m · LARGURA A CONFIRMAR'}}
  },
@@ -786,12 +786,10 @@ function riscoSVG(pk,tam,r,larg){
   var m=0.022*PX;                        /* folga entre peças */
   var ehBL=(pk==='bab');
   var corpoD=ehBL?MOLDE.corpoBL:MOLDE.corpo;
-  var nMangas=r.un*2;
-
-  /* faixa das mangas no topo, corpos embaixo */
-  var faixaMangas=(ehBL?0.19:0.23)*PX;
-  var hCorpo=H-faixaMangas-3*m;
-  var wCorpo=(W-3*m)/2;
+  /* tecido tubular: a manga sai DUPLA de um contorno só, então risca-se
+     1 contorno de manga por unidade — não dois. */
+  var nMangas=r.un;
+  var mangaLado=(r.mp==='lado');
 
   var s='<svg viewBox="0 0 '+nmx(vbW)+' '+nmx(vbH)+'" role="img" aria-label="Risco do encaixe '+pk+' '+tam+'">';
   /* tecido tubular: os 0,94 m são a largura na mesa, com dupla camada.
@@ -801,14 +799,30 @@ function riscoSVG(pk,tam,r,larg){
     +'<line x1="'+nmx(ox+W-3)+'" y1="'+oy+'" x2="'+nmx(ox+W-3)+'" y2="'+nmx(oy+H)+'" stroke="#90a4ae" stroke-width="1" stroke-dasharray="3 3"/>'
     +'<text x="'+nmx(ox+W/2)+'" y="'+nmx(oy+H-5)+'" text-anchor="middle" font-family="Arial" font-size="9.5" fill="#90a4ae">'
     +'tubular · dupla camada</text>';
-  /* mangas na faixa de cima */
-  var wm=(W-(nMangas+1)*m)/nMangas;
-  for(var i=0;i<nMangas;i++){
-    s+=svgPeca(MOLDE.manga, ox+m+i*(wm+m), oy+m, wm, faixaMangas-m, '#fff');
+  if(mangaLado){
+    /* mangas numa coluna à direita, corpos ocupando o resto da largura */
+    var colM=0.26*W;
+    var wCorpoL=(W-colM-3*m)/2;
+    var hCorpoL=H-2*m;
+    s+=svgPeca(corpoD, ox+m,              oy+m, wCorpoL, hCorpoL, '#fff');
+    s+=svgPeca(corpoD, ox+2*m+wCorpoL,    oy+m, wCorpoL, hCorpoL, '#fff');
+    var hm=(H-(nMangas+1)*m)/nMangas;
+    for(var j=0;j<nMangas;j++){
+      s+=svgPeca(MOLDE.manga, ox+W-colM+m, oy+m+j*(hm+m), colM-2*m, hm, '#fff');
+    }
+  }else{
+    /* manga(s) na faixa de cima, centralizadas; corpos embaixo */
+    var faixaMangas=(ehBL?0.19:0.23)*PX;
+    var hCorpo=H-faixaMangas-3*m;
+    var wCorpo=(W-3*m)/2;
+    var wm=Math.min((W-3*m)/2,(W-(nMangas+1)*m)/nMangas);
+    var xIni=ox+(W-(nMangas*wm+(nMangas-1)*m))/2;
+    for(var i=0;i<nMangas;i++){
+      s+=svgPeca(MOLDE.manga, xIni+i*(wm+m), oy+m, wm, faixaMangas-m, '#fff');
+    }
+    s+=svgPeca(corpoD, ox+m,          oy+faixaMangas+m, wCorpo, hCorpo, '#fff');
+    s+=svgPeca(corpoD, ox+2*m+wCorpo, oy+faixaMangas+m, wCorpo, hCorpo, '#fff');
   }
-  /* corpos */
-  s+=svgPeca(corpoD, ox+m,             oy+faixaMangas+m, wCorpo, hCorpo, '#fff');
-  s+=svgPeca(corpoD, ox+2*m+wCorpo,    oy+faixaMangas+m, wCorpo, hCorpo, '#fff');
 
   /* cotas */
   var yb=oy+H+14;
@@ -873,7 +887,9 @@ function renderRisco(){
         +'<div class="risco-svg">'+riscoSVG(pk,tam,r,larg)+'</div>'
         +'<div class="risco-pe">Rende <b>'+r.un+' peça'+(r.un>1?'s':'')+'</b> por folha'
         +(r.fr?' <span class="risco-sobra">+ '+r.fr+' frente que sobra</span>':'')
-        +'<br>Tecido tubular: cada contorno corta <b>2 camadas</b>, ou seja 2 peças.'
+        +'<br>Riscado: <b>2 corpos</b> + <b>'+r.un+' manga'+(r.un>1?'s':'')+'</b> '
+        +(r.mp==='lado'?'na lateral':'na faixa de cima')+'.'
+        +'<br>Tubular: cada contorno corta <b>2 camadas</b> — a manga já sai em par, por isso risca-se uma só.'
         +'<br>'+nm2(area)+' m² na mesa · <b>'+nm3(areaPc)+' m² por peça</b></div>'
         +'</div>';
     }
