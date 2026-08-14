@@ -55,6 +55,7 @@ tfoot td.r{text-align:right}
 .badge{display:inline-block;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:bold}
 .b-cam{background:#ede7f6;color:#6a1b9a}
 .b-bab{background:#e0f7fa;color:#00838f}
+.b-reg{background:#fce4ec;color:#ad1457}
 .b-mol{background:#fff3e0;color:#e65100}
 .b-wh{background:#f5f5f5;color:#333;border:1px solid #ccc}
 .b-bk{background:#333;color:#fff}
@@ -92,6 +93,30 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
 .prog-bar{height:100%;background:#2e7d32;border-radius:3px;transition:width .3s}
 .empty{padding:26px 14px;text-align:center;color:#999;font-size:12px;background:#fafafa;border-radius:8px;border:1px dashed #ddd;line-height:1.6}
 .eco{color:#2e7d32;font-weight:bold}
+.syncbar{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+.sync-status{font-size:11.5px;font-weight:bold;padding:4px 10px;border-radius:12px;background:#f0f2f5}
+.sync-status.ok{background:#e8f5e9;color:#2e7d32}
+.sync-status.busy{background:#fff8e1;color:#8d6e00}
+.sync-status.err{background:#fdecea;color:#c62828}
+.sync-status.off{background:#eee;color:#777}
+.sync-panel{display:none;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;background:#f7f8fc;border-radius:8px;padding:10px 14px}
+.sync-panel.open{display:flex}
+.sync-panel label{font-size:11px;font-weight:bold;color:#555}
+.sync-panel input{padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:11.5px;font-family:inherit}
+.sync-panel input#sync-url-input{width:340px;max-width:100%}
+.sync-panel input#sync-user-input{width:150px}
+.sync-note{font-size:10.5px;color:#999;width:100%;line-height:1.5}
+.por-quem{font-size:10px;color:#999;font-weight:normal}
+.risco-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+.risco-card{border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.risco-hdr{background:#1a1a2e;color:#fff;padding:7px 12px;font-size:11.5px;font-weight:bold;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.risco-hdr .med{font-size:10.5px;opacity:.75;font-weight:normal;white-space:nowrap}
+.risco-svg{padding:12px;display:flex;justify-content:center;background:#fafafa}
+.risco-svg svg{max-width:100%;height:auto}
+.risco-pe{padding:7px 12px;font-size:10.5px;color:#555;border-top:1px solid #eee;line-height:1.6}
+.risco-pe b{color:#1a1a2e}
+.risco-sobra{color:#e65100;font-weight:bold}
+.risco-sec{grid-column:1/-1;font-size:12px;font-weight:bold;color:#7B1FA2;text-transform:uppercase;letter-spacing:.5px;margin-top:6px;padding-bottom:4px;border-bottom:2px solid #ede7f6}
 .falta-sim{color:#c62828;font-weight:bold}
 .falta-nao{color:#2e7d32;font-weight:bold}
 .win{background:#e8f5e9!important}
@@ -116,6 +141,20 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
   </div>
 </div>
 
+<div class="syncbar">
+  <span class="sync-status off" id="sync-status">⚪ Sincronização não configurada</span>
+  <button class="bkbtn secondary" onclick="toggleSyncPanel()">⚙️ Sincronização em tempo real</button>
+</div>
+<div class="sync-panel" id="sync-panel">
+  <label>Link de sincronização (Apps Script):</label>
+  <input type="text" id="sync-url-input" placeholder="https://script.google.com/macros/s/.../exec">
+  <label>Seu nome:</label>
+  <input type="text" id="sync-user-input" placeholder="Ex: Natália">
+  <button class="bkbtn" onclick="saveSyncConfig()">Salvar</button>
+  <button class="bkbtn secondary" onclick="desligarSync()">Desligar</button>
+  <span class="sync-note">Configure uma vez em cada computador — todos usam o mesmo link, cada um com o seu nome. Quantidades e marcações de corte passam a valer para todo mundo, e ao lado de cada marcação aparece quem marcou. É o mesmo link do dashboard de produção; os dados da DanCERA ficam separados por um prefixo próprio.</span>
+</div>
+
 <div class="wbar">
   <span class="lb">Largura do tecido:</span>
   <button class="wbtn on" id="w094" onclick="setW('0.94',this)">0,94 m — tecido em uso</button>
@@ -130,12 +169,14 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
   <b>O número apresentado é o custo com desperdício.</b> No tecido de 0,94 m cada folha rende <b>1 peça inteira + 1 frente que sobra</b>. Essa frente está paga dentro do preço — é assim que a peça avulsa custa de verdade. Para aproveitar a sobra é preciso alinhar as quantidades e encaixar em par, como já é feito no moletom (1,82 m rendendo 2 unidades). A coluna <b>frentes sobrando</b> mostra quanto tecido está indo embora hoje.
 </div>
 <div class="banner warn2">
-  <b>Pendências de medição:</b> o <b>moletom</b> só tem encaixe medido no tamanho <b>P</b> e a <b>largura do tecido ainda não foi confirmada</b> — ele entra na conta, mas o número pode mudar quando a largura for conferida, e fica fora do comparativo de larguras. Quantidade de malha ainda não fechada com o fornecedor; infesto fixado em <b>5 folhas</b> por causa do volume pequeno.
+  <b>Tecidos:</b> camiseta, baby look e regata são <b>malha PV</b>. O <b>moletom é PA 2 cabos</b>, outro tecido — fica fora da conta de malha PV e será alimentado depois.<br>
+  <b>Pendências de medição:</b> a <b>regata</b> ainda não tem encaixe medido, então não aparece nas abas; assim que medirem na mesa ela entra sozinha. O <b>moletom</b> só tem o tamanho <b>P</b> medido e a largura do tecido não foi confirmada. Infesto fixado em <b>5 folhas</b> por causa do volume pequeno.
 </div>
 
 <div class="tabs">
   <button class="tab active" onclick="showTab('pedido',this)">📋 Pedido</button>
   <button class="tab" onclick="showTab('enc',this)">✂️ Encaixe de Corte</button>
+  <button class="tab" onclick="showTab('risco',this)">📐 Risco do Encaixe</button>
   <button class="tab" onclick="showTab('rend',this)">🧵 Rendimento &amp; Comparativo</button>
   <button class="tab" onclick="showTab('compras',this)">🛒 Lista de Compras</button>
 </div>
@@ -171,6 +212,12 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
   <p class="note">Um bloco por peça e cor. Cada folha do infesto rende o número de peças medido na mesa; o infesto fecha em 5 folhas e o excedente abre um novo infesto. Marque a linha quando aquele grupo estiver cortado. <b>Frentes sobrando</b> é o desperdício que está dentro do preço no tecido de 0,94 m: uma frente por folha, sem costas para fechar peça. Alinhar as quantidades e medir um encaixe em par — como já existe no moletom — é o que zera essa coluna.</p>
 </div>
 
+<div id="risco" class="section">
+  <h2>Risco do Encaixe</h2>
+  <p class="note" style="margin-top:0">Cada desenho é o <b>tecido em escala real</b>: a largura e o comprimento do encaixe são exatamente os que medimos na mesa, e as peças estão desenhadas na proporção em que foram encaixadas. Serve para enxergar quanto do tecido vira peça e quanto vira retalho. As linhas são contornos simplificados do molde, não o molde de corte.</p>
+  <div class="risco-grid" id="risco-body"></div>
+</div>
+
 <div id="rend" class="section">
   <h2>Rendimento medido na mesa</h2>
   <h3>Tecido 0,94 m — em uso na produção</h3>
@@ -187,18 +234,34 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
       <tbody id="r122"></tbody>
     </table>
   </div>
+  <h3>Com a malha que a DanCERA já comprou</h3>
+  <div class="sgrid" id="ganho-cards"></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Peça</th><th>Tam.</th><th class="r">Rende no 0,94 m</th><th class="r">Rende no 1,22 m</th><th class="r">Peças a mais</th></tr></thead>
+      <tbody id="ganho-body"></tbody>
+    </table>
+  </div>
+  <p class="note">Simulação com os <b>25 kg de malha PV</b> já comprados (descontados os 0,83 m da branca), como se todo o tecido fosse usado numa peça só. Serve para enxergar o tamanho do ganho — o pedido real mistura tamanhos e cores, e está na aba Lista de Compras.</p>
+
   <h3>Comparativo — 0,94 m × 1,22 m</h3>
   <div class="tbl-wrap">
     <table>
       <thead>
         <tr>
           <th rowspan="2">Peça</th><th rowspan="2">Tam.</th>
+          <th colspan="3" class="grp" style="background:#1b5e20">PEÇAS NO MESMO COMPRIMENTO DE TECIDO</th>
+          <th colspan="3" class="grp" style="background:#0d47a1">PEÇAS POR QUILO DE MALHA</th>
           <th colspan="2" class="grp">METRO LINEAR POR PEÇA</th>
-          <th rowspan="2" class="r">Economia<br>em metros</th>
           <th colspan="2" class="grp" style="background:#4a148c">ÁREA POR PEÇA (m²)</th>
           <th rowspan="2" class="r">Economia<br>em tecido</th>
         </tr>
-        <tr><th class="r">0,94 m</th><th class="r">1,22 m</th><th class="r">0,94 m</th><th class="r">1,22 m</th></tr>
+        <tr>
+          <th class="r">0,94 m</th><th class="r">1,22 m</th><th class="r">Ganho</th>
+          <th class="r">0,94 m</th><th class="r">1,22 m</th><th class="r">A mais</th>
+          <th class="r">0,94 m</th><th class="r">1,22 m</th>
+          <th class="r">0,94 m</th><th class="r">1,22 m</th>
+        </tr>
       </thead>
       <tbody id="rcomp"></tbody>
       <tfoot id="rcomp-foot"></tfoot>
@@ -235,8 +298,13 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
 <script>
 var SIZES=['PP','P','M','G','GG'];
 var COLORS=[{k:'preto',n:'Preto',dot:'#222'},{k:'branco',n:'Branco',dot:'#fff'}];
-/* pv = peça feita em malha PV (a mesma malha das camisetas) */
-var PECAS=[{k:'cam',n:'Camiseta',cls:'b-cam',pv:1},{k:'bab',n:'Baby look',cls:'b-bab',pv:1},{k:'mol',n:'Moletom fem. gola careca',cls:'b-mol',pv:0}];
+/* pv = peça feita em malha PV. Moletom é PA 2 cabos, outro tecido. */
+var PECAS=[
+ {k:'cam',n:'Camiseta',cls:'b-cam',pv:1},
+ {k:'bab',n:'Baby look',cls:'b-bab',pv:1},
+ {k:'reg',n:'Regata',cls:'b-reg',pv:1},
+ {k:'mol',n:'Moletom fem. gola careca',cls:'b-mol',pv:0,tecido:'PA 2 cabos'}
+];
 function ehPV(pk){for(var i=0;i<PECAS.length;i++){if(PECAS[i].k===pk)return !!PECAS[i].pv;}return false;}
 
 /* Malha PV: 1 kg rende 2,5 m lineares na largura de 0,94 m.
@@ -285,11 +353,13 @@ var REND={
  '0.94':{
   cam:{P:{len:0.91,un:1,fr:1,obs:'1 un + 1 frente'},M:{len:0.93,un:1,fr:1,obs:'1 un + 1 frente'},G:{len:0.96,un:1,fr:1,obs:'1 un + 1 frente'},GG:{len:0.99,un:1,fr:1,obs:'1 un + 1 frente'}},
   bab:{PP:{len:0.75,un:1,fr:1,obs:'1 un + 1 frente'},P:{len:0.77,un:1,fr:1,obs:'1 un + 1 frente'},M:{len:0.91,un:1,fr:1,obs:'1 un + 1 frente'},G:{len:0.95,un:1,fr:1,obs:'1 un + 1 frente'},GG:{len:1.00,un:1,fr:1,obs:'1 un + 1 frente'}},
+  reg:{},
   mol:{P:{len:1.82,un:2,fr:0,obs:'encaixe em par, sem sobra; avulso sai 1,20 m · LARGURA A CONFIRMAR'}}
  },
  '1.22':{
   cam:{P:{len:0.90,un:2,fr:0,obs:'2 un'},M:{len:0.92,un:2,fr:0,obs:'2 un'},G:{len:0.96,un:2,fr:0,obs:'2 un'},GG:{len:0.99,un:2,fr:0,obs:'2 un'}},
   bab:{PP:{len:0.86,un:2,fr:0,obs:'2 un'},P:{len:0.90,un:2,fr:0,obs:'2 un'},M:{len:0.93,un:2,fr:0,obs:'2 un'},G:{len:0.97,un:2,fr:0,obs:'2 un'},GG:{len:1.01,un:2,fr:0,obs:'2 un'}},
+  reg:{},
   mol:{}
  }
 };
@@ -309,6 +379,114 @@ var KEY='dancera_pl_corte_v1';
 var st={qtd:cloneQtd(),cortado:{}};
 try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p.qtd)st.qtd=p.qtd;st.cortado=p.cortado||{};}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
+
+/* ---------- SINCRONIZAÇÃO EM TEMPO REAL (Google Sheets via Apps Script) ----------
+   Mesmo endpoint do dashboard de produção. O prefixo DANCERA_ isola estes dados
+   dos dados de produção da Leve Sonho na mesma planilha. */
+var DEFAULT_SYNC_URL='https://script.google.com/macros/s/AKfycbx3CT7Qd1mmIKV7k9EyUCAwyazeHEbMzOJRvBRmYgkERe5B4fgvLdJ9XR2CCVotIrG9/exec';
+var SYNC_URL_KEY='ls_sync_url', SYNC_USER_KEY='ls_sync_user', SYNC_POLL_MS=15000;
+var SYNC_NS='DANCERA_';
+var syncUrl=localStorage.getItem(SYNC_URL_KEY)||'';
+var syncUser=localStorage.getItem(SYNC_USER_KEY)||'';
+var syncTimer=null, syncInFlight=false;
+var quem={};   /* quem[chave] = {by, at} — mostrado ao lado da marcação */
+
+function toggleSyncPanel(){
+  var p=document.getElementById('sync-panel');
+  document.getElementById('sync-url-input').value=syncUrl||DEFAULT_SYNC_URL;
+  document.getElementById('sync-user-input').value=syncUser;
+  p.className=(p.className.indexOf('open')>=0)?'sync-panel':'sync-panel open';
+}
+function saveSyncConfig(){
+  var u=document.getElementById('sync-url-input').value.replace(/^\s+|\s+$/g,'');
+  var n=document.getElementById('sync-user-input').value.replace(/^\s+|\s+$/g,'');
+  if(u&&!n){alert('Ponha o seu nome — é ele que aparece ao lado do que você marcar.');return;}
+  syncUrl=u;syncUser=n;
+  localStorage.setItem(SYNC_URL_KEY,syncUrl);
+  localStorage.setItem(SYNC_USER_KEY,syncUser);
+  document.getElementById('sync-panel').className='sync-panel';
+  if(syncTimer)clearInterval(syncTimer);
+  if(syncUrl){setSyncStatus('busy','Conectando...');syncPull(function(){startSyncPolling();});}
+  else setSyncStatus('off','Sincronização desligada (só neste navegador)');
+}
+function desligarSync(){
+  syncUrl='';localStorage.setItem(SYNC_URL_KEY,'');
+  if(syncTimer)clearInterval(syncTimer);
+  document.getElementById('sync-panel').className='sync-panel';
+  setSyncStatus('off','Sincronização desligada (só neste navegador)');
+}
+function setSyncStatus(state,msg){
+  var el=document.getElementById('sync-status');
+  if(!el)return;
+  el.className='sync-status '+state;
+  var ic={ok:'🟢',busy:'🟡',err:'🔴',off:'⚪'}[state]||'⚪';
+  el.textContent=ic+' '+msg;
+}
+function startSyncPolling(){
+  if(syncTimer)clearInterval(syncTimer);
+  syncTimer=setInterval(function(){
+    var ae=document.activeElement;
+    if(ae&&ae.tagName==='INPUT')return;   /* não atrapalha quem está digitando */
+    syncPull();
+  },SYNC_POLL_MS);
+}
+function syncPull(cb){
+  if(!syncUrl||syncInFlight)return;
+  syncInFlight=true;setSyncStatus('busy','Sincronizando...');
+  fetch(syncUrl+(syncUrl.indexOf('?')>=0?'&':'?')+'t='+Date.now())
+    .then(function(r){return r.json();})
+    .then(function(d){
+      applyRemoteState(d.rows||[]);
+      setSyncStatus('ok','Sincronizado às '+new Date().toLocaleTimeString('pt-BR'));
+    })
+    .catch(function(){setSyncStatus('err','Sem conexão — usando dados locais');})
+    .then(function(){syncInFlight=false;if(cb)cb();});
+}
+function applyRemoteState(rows){
+  var mudou=false;
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i],aba=r.aba,chave=r.chave;
+    if(!aba||!chave||aba.indexOf(SYNC_NS)!==0)continue;
+    aba=aba.slice(SYNC_NS.length);
+    var ok=(r.campo1===true||r.campo1==='TRUE'||r.campo1==='true');
+    var c2=(r.campo2===undefined||r.campo2===null)?'':r.campo2;
+    var by=r.atualizado_por||'',at=r.atualizado_em||'';
+    if(aba==='corte'){
+      var novo=ok?1:0;
+      if((st.cortado[chave]?1:0)!==novo){st.cortado[chave]=novo;mudou=true;}
+      quem[chave]={by:by,at:at};
+    }else if(aba==='qtd'){
+      var v=parseInt(c2,10);if(isNaN(v)||v<0)v=0;
+      if((st.qtd[chave]||0)!==v){st.qtd[chave]=v;mudou=true;}
+      quem['q:'+chave]={by:by,at:at};
+    }
+  }
+  if(mudou){save();render();}
+}
+function syncPush(aba,chave,campo1,campo2){
+  if(!syncUrl)return;
+  var payload={aba:SYNC_NS+aba,chave:chave,campo1:!!campo1,
+    campo2:(campo2===undefined||campo2===null)?'':campo2,usuario:syncUser||'(sem nome)'};
+  setSyncStatus('busy','Enviando...');
+  fetch(syncUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json();})
+    .then(function(){setSyncStatus('ok','Sincronizado às '+new Date().toLocaleTimeString('pt-BR'));})
+    .catch(function(){setSyncStatus('err','Falha ao enviar — verifique a internet');});
+}
+function fmtQuando(at){
+  try{var d=new Date(at);if(isNaN(d))return String(at);
+    return d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
+  catch(e){return String(at);}
+}
+function selo(chave){
+  var q=quem[chave];
+  if(!q||!q.by)return '';
+  return ' <span class="por-quem">· '+q.by+(q.at?' em '+fmtQuando(q.at):'')+'</span>';
+}
+function iniciarSync(){
+  if(syncUrl){setSyncStatus('busy','Conectando...');syncPull(function(){startSyncPolling();});}
+  else setSyncStatus('off','Sincronização não configurada — clique para ligar');
+}
 
 function nm2(v){return v.toFixed(2).replace('.',',');}
 function nm1(v){return v.toFixed(1).replace('.',',');}
@@ -354,16 +532,27 @@ function showTab(id,btn){
   for(var j=0;j<ts.length;j++)ts[j].className='tab';
   btn.className='tab active';
 }
+var qtdTimer=null;
 function onQtd(el,pk,tam,ck){
   var v=parseInt(el.value,10);
   if(isNaN(v)||v<0)v=0;
-  st.qtd[qk(pk,tam,ck)]=v;
+  var chave=qk(pk,tam,ck);
+  st.qtd[chave]=v;
   el.className='qtd'+(v>0?' has':'');
-  save();render();
+  save();
+  /* espera parar de digitar antes de mandar, senão manda a cada tecla */
+  if(qtdTimer)clearTimeout(qtdTimer);
+  qtdTimer=setTimeout(function(){syncPush('qtd',chave,false,v);},600);
+  var id=el.id, pos=el.selectionStart;
+  render();
+  /* o render reconstrói a tabela — devolve o cursor para onde estava */
+  var novo=document.getElementById(id);
+  if(novo){novo.focus();try{novo.setSelectionRange(pos,pos);}catch(e){}}
 }
 function onChk(el,key){
   st.cortado[key]=el.checked?1:0;
-  save();render();
+  if(syncUser)quem[key]={by:syncUser,at:new Date().toISOString()};
+  save();syncPush('corte',key,el.checked,'');render();
 }
 
 /* ---------- PEDIDO ---------- */
@@ -378,7 +567,11 @@ function renderPedido(){
       var q=getQ(l.pk,l.tam,COLORS[c].k);qt+=q;
       /* metragem por folha cheia, igual ao encaixe e a lista de compras */
       if(q){tf+=Math.ceil(q/l.r.un)*(l.r.fr||0);mtLinha+=Math.ceil(q/l.r.un)*l.r.len;}
-      cels+='<td class="c"><input class="qtd'+(q>0?' has':'')+'" type="number" min="0" step="1" value="'+q+'" aria-label="'+pc.n+' '+l.tam+' '+COLORS[c].n+'" oninput="onQtd(this,\''+l.pk+'\',\''+l.tam+'\',\''+COLORS[c].k+'\')"></td>';
+      var idq='q_'+l.pk+'_'+l.tam+'_'+COLORS[c].k;
+      cels+='<td class="c"><input id="'+idq+'" class="qtd'+(q>0?' has':'')+'" type="number" min="0" step="1" value="'+q+'"'
+        +' aria-label="'+pc.n+' '+l.tam+' '+COLORS[c].n+'" title="'+pc.n+' '+l.tam+' '+COLORS[c].n
+        +((quem['q:'+qk(l.pk,l.tam,COLORS[c].k)]&&quem['q:'+qk(l.pk,l.tam,COLORS[c].k)].by)?' · último ajuste: '+quem['q:'+qk(l.pk,l.tam,COLORS[c].k)].by:'')+'"'
+        +' oninput="onQtd(this,\''+l.pk+'\',\''+l.tam+'\',\''+COLORS[c].k+'\')"></td>';
     }
     var mt=mtLinha;tp+=qt;tm+=mt;ta+=mt*parseFloat(LARG);
     var obsLinha='';
@@ -453,7 +646,8 @@ function renderEnc(){
         rows+='<div class="enc-row'+(done?' cortado':'')+'">'
           +'<div class="c-chk"><input type="checkbox" '+(done?'checked':'')+' aria-label="Cortado '+tam+'" onchange="onChk(this,\''+key+'\')"></div>'
           +'<div class="e-nm"><b>'+tam+'</b>'+(sobra>0?' <span style="color:#e65100">(+'+sobra+' pç a mais no infesto)</span>':'')
-            +(OBS_QTD[qk(pk,tam,ck)]?' <span style="font-size:10.5px;color:#e65100">· '+OBS_QTD[qk(pk,tam,ck)]+'</span>':'')+'</div>'
+            +(OBS_QTD[qk(pk,tam,ck)]?' <span style="font-size:10.5px;color:#e65100">· '+OBS_QTD[qk(pk,tam,ck)]+'</span>':'')
+            +(done?selo(key):'')+'</div>'
           +'<div class="c-num">'+q+' pç</div>'
           +'<div class="c-num">'+fol+' folha'+(fol>1?'s':'')+'</div>'
           +'<div class="c-num">'+inf+' infesto'+(inf>1?'s':'')+'</div>'
@@ -518,7 +712,7 @@ function renderRend(){
     if(lg==='1.22')html+='<tr><td><span class="badge b-mol">Moletom fem. gola careca</span></td><td colspan="6" style="color:#e65100;white-space:normal">Não medido nesta largura — falta levar o molde do moletom para a mesa no tecido de 1,22 m.</td></tr>';
     tb.innerHTML=html;
   }
-  var cb=document.getElementById('rcomp'),html2='',s94=0,s122=0,a94=0,a122=0,n=0;
+  var cb=document.getElementById('rcomp'),html2='',s94=0,s122=0,a94=0,a122=0,n=0,s2a=0,s2b=0;
   for(var i2=0;i2<PECAS.length;i2++){
     var pk=PECAS[i2].k,first2=1;
     for(var s2=0;s2<SIZES.length;s2++){
@@ -526,16 +720,191 @@ function renderRend(){
       if(!ra||!rb)continue;
       var ma=ra.len/ra.un,mb=rb.len/rb.un,aa=ma*0.94,ab=mb*1.22;
       s94+=ma;s122+=mb;a94+=aa;a122+=ab;n++;
+      /* no mesmo comprimento de tecido: quantas peças saem de cada largura.
+         base = o comprimento que rende 1 peça no tecido de 0,94 m */
+      var pnb=ma/mb;                 /* peças no 1,22 m para cada 1 peça no 0,94 m */
+      /* por quilo de malha PV (o peso define a área) */
+      var kga=PV_AREA_KG/aa, kgb=PV_AREA_KG/ab;
+      s2a+=kga;s2b+=kgb;
       html2+='<tr class="win"><td>'+(first2?'<span class="badge '+PECAS[i2].cls+'">'+PECAS[i2].n+'</span>':'')+'</td><td><b>'+tam+'</b></td>'
-        +'<td class="r">'+nm3(ma)+'</td><td class="r">'+nm3(mb)+'</td><td class="r eco">−'+nm1((1-mb/ma)*100)+'%</td>'
-        +'<td class="r">'+nm3(aa)+'</td><td class="r">'+nm3(ab)+'</td><td class="r eco">−'+nm1((1-ab/aa)*100)+'%</td></tr>';
+        +'<td class="r">1 peça</td><td class="r"><b>'+nm1(pnb)+' peças</b></td><td class="r eco">+'+nm1((pnb-1)*100)+'%</td>'
+        +'<td class="r">'+nm1(kga)+'</td><td class="r"><b>'+nm1(kgb)+'</b></td><td class="r eco">+'+nm1(kgb-kga)+' pç/kg</td>'
+        +'<td class="r">'+nm3(ma)+'</td><td class="r">'+nm3(mb)+'</td>'
+        +'<td class="r">'+nm3(aa)+'</td><td class="r">'+nm3(ab)+'</td>'
+        +'<td class="r eco">−'+nm1((1-ab/aa)*100)+'%</td></tr>';
       first2=0;
     }
   }
   cb.innerHTML=html2;
   document.getElementById('rcomp-foot').innerHTML='<tr><td colspan="2">MÉDIA ('+n+' tamanhos)</td>'
-    +'<td class="r">'+nm3(s94/n)+'</td><td class="r">'+nm3(s122/n)+'</td><td class="r">−'+nm1((1-s122/s94)*100)+'%</td>'
-    +'<td class="r">'+nm3(a94/n)+'</td><td class="r">'+nm3(a122/n)+'</td><td class="r">−'+nm1((1-a122/a94)*100)+'%</td></tr>';
+    +'<td class="r">1 peça</td><td class="r">'+nm1(s94/s122)+' peças</td><td class="r">+'+nm1((s94/s122-1)*100)+'%</td>'
+    +'<td class="r">'+nm1(s2a/n)+'</td><td class="r">'+nm1(s2b/n)+'</td><td class="r">+'+nm1((s2b-s2a)/n)+' pç/kg</td>'
+    +'<td class="r">'+nm3(s94/n)+'</td><td class="r">'+nm3(s122/n)+'</td>'
+    +'<td class="r">'+nm3(a94/n)+'</td><td class="r">'+nm3(a122/n)+'</td>'
+    +'<td class="r">−'+nm1((1-a122/a94)*100)+'%</td></tr>';
+  renderGanhoEstoque();
+}
+
+/* ---------- RISCO DO ENCAIXE (desenho em escala) ----------
+   O tecido é desenhado na medida real: largura x comprimento do encaixe.
+   Os contornos das peças são simplificados, na proporção em que foram encaixadas. */
+var MOLDE={
+  /* caixa unitária 0..1 — corpo de camiseta */
+  corpo:'M0.13,0.06 C0.13,0.02 0.17,0 0.21,0 L0.40,0 C0.42,0.06 0.58,0.06 0.60,0 L0.79,0 '
+       +'C0.83,0 0.87,0.02 0.87,0.06 L0.98,0.21 C1,0.25 0.97,0.29 0.93,0.28 L0.86,0.23 '
+       +'L0.86,1 L0.14,1 L0.14,0.23 L0.07,0.28 C0.03,0.29 0,0.25 0.02,0.21 Z',
+  /* corpo de baby look — cintura marcada */
+  corpoBL:'M0.15,0.06 C0.15,0.02 0.19,0 0.23,0 L0.41,0 C0.43,0.07 0.57,0.07 0.59,0 L0.77,0 '
+       +'C0.81,0 0.85,0.02 0.85,0.06 L0.97,0.22 C0.99,0.26 0.96,0.30 0.92,0.29 L0.84,0.24 '
+       +'C0.78,0.45 0.78,0.62 0.83,0.80 L0.86,1 L0.14,1 L0.17,0.80 C0.22,0.62 0.22,0.45 0.16,0.24 '
+       +'L0.08,0.29 C0.04,0.30 0.01,0.26 0.03,0.22 Z',
+  manga:'M0,0.30 C0.20,0 0.80,0 1,0.30 L0.87,1 L0.13,1 Z'
+};
+function svgPeca(d,x,y,w,h,fill){
+  return '<path d="'+d+'" transform="translate('+nmx(x)+','+nmx(y)+') scale('+nmx(w)+','+nmx(h)+')" '
+    +'fill="'+fill+'" stroke="#1a1a2e" stroke-width="'+nmx(1.2/Math.max(w,h))+'" '
+    +'vector-effect="non-scaling-stroke" stroke-linejoin="round"/>';
+}
+function nmx(v){return Math.round(v*1000)/1000;}
+
+function riscoSVG(pk,tam,r,larg){
+  var PX=190/larg;                       /* mesma escala para todos na largura atual */
+  var W=larg*PX, H=r.len*PX;
+  var padL=34, padB=26, padT=6, padR=6;  /* espaço das cotas */
+  var vbW=W+padL+padR, vbH=H+padT+padB;
+  var ox=padL, oy=padT;
+  var m=0.022*PX;                        /* folga entre peças */
+  var ehBL=(pk==='bab');
+  var corpoD=ehBL?MOLDE.corpoBL:MOLDE.corpo;
+  var nMangas=r.un*2;
+
+  /* faixa das mangas no topo, corpos embaixo */
+  var faixaMangas=(ehBL?0.19:0.23)*PX;
+  var hCorpo=H-faixaMangas-3*m;
+  var wCorpo=(W-3*m)/2;
+
+  var s='<svg viewBox="0 0 '+nmx(vbW)+' '+nmx(vbH)+'" role="img" aria-label="Risco do encaixe '+pk+' '+tam+'">';
+  /* tecido */
+  s+='<rect x="'+ox+'" y="'+oy+'" width="'+nmx(W)+'" height="'+nmx(H)+'" fill="#eceff1" stroke="#90a4ae" stroke-width="1"/>';
+  /* mangas na faixa de cima */
+  var wm=(W-(nMangas+1)*m)/nMangas;
+  for(var i=0;i<nMangas;i++){
+    s+=svgPeca(MOLDE.manga, ox+m+i*(wm+m), oy+m, wm, faixaMangas-m, '#fff');
+  }
+  /* corpos */
+  s+=svgPeca(corpoD, ox+m,             oy+faixaMangas+m, wCorpo, hCorpo, '#fff');
+  s+=svgPeca(corpoD, ox+2*m+wCorpo,    oy+faixaMangas+m, wCorpo, hCorpo, '#fff');
+
+  /* cotas */
+  var yb=oy+H+14;
+  s+='<line x1="'+ox+'" y1="'+yb+'" x2="'+nmx(ox+W)+'" y2="'+yb+'" stroke="#7B1FA2" stroke-width="1"/>'
+    +'<line x1="'+ox+'" y1="'+(yb-4)+'" x2="'+ox+'" y2="'+(yb+4)+'" stroke="#7B1FA2" stroke-width="1"/>'
+    +'<line x1="'+nmx(ox+W)+'" y1="'+(yb-4)+'" x2="'+nmx(ox+W)+'" y2="'+(yb+4)+'" stroke="#7B1FA2" stroke-width="1"/>'
+    +'<text x="'+nmx(ox+W/2)+'" y="'+(yb+13)+'" text-anchor="middle" font-family="Arial" font-size="11" fill="#7B1FA2">'
+    +nm2(larg)+' m de largura</text>';
+  var xl=ox-12;
+  s+='<line x1="'+xl+'" y1="'+oy+'" x2="'+xl+'" y2="'+nmx(oy+H)+'" stroke="#00838f" stroke-width="1"/>'
+    +'<line x1="'+(xl-4)+'" y1="'+oy+'" x2="'+(xl+4)+'" y2="'+oy+'" stroke="#00838f" stroke-width="1"/>'
+    +'<line x1="'+(xl-4)+'" y1="'+nmx(oy+H)+'" x2="'+(xl+4)+'" y2="'+nmx(oy+H)+'" stroke="#00838f" stroke-width="1"/>'
+    +'<text x="'+(xl-5)+'" y="'+nmx(oy+H/2)+'" text-anchor="middle" font-family="Arial" font-size="11" fill="#00838f" '
+    +'transform="rotate(-90 '+(xl-5)+' '+nmx(oy+H/2)+')">'+nm2(r.len)+' m</text>';
+  s+='</svg>';
+  return s;
+}
+
+function riscoTiraSVG(larg){
+  var PX=190/larg, W=larg*PX, H=TIRA.len*PX;
+  var padL=34,padB=26,padT=6,padR=6;
+  var ox=padL, oy=padT;
+  var porFaixa=Math.floor(larg/TIRA.larg);
+  var mostrar=Math.min(porFaixa,14);           /* desenha algumas, não as 31 */
+  var s='<svg viewBox="0 0 '+nmx(W+padL+padR)+' '+nmx(H+padT+padB)+'" role="img" aria-label="Risco da tira de gola">';
+  s+='<rect x="'+ox+'" y="'+oy+'" width="'+nmx(W)+'" height="'+nmx(H)+'" fill="#eceff1" stroke="#90a4ae" stroke-width="1"/>';
+  var wt=TIRA.larg*PX;
+  for(var i=0;i<mostrar;i++){
+    s+='<rect x="'+nmx(ox+2+i*(wt+1.5))+'" y="'+nmx(oy+3)+'" width="'+nmx(wt)+'" height="'+nmx(H-6)+'" '
+      +'fill="#fff" stroke="#1a1a2e" stroke-width="1"/>';
+  }
+  s+='<text x="'+nmx(ox+W-6)+'" y="'+nmx(oy+H/2)+'" text-anchor="end" font-family="Arial" font-size="11" fill="#777">…'
+    +porFaixa+' tiras</text>';
+  var yb=oy+H+14;
+  s+='<line x1="'+ox+'" y1="'+yb+'" x2="'+nmx(ox+W)+'" y2="'+yb+'" stroke="#7B1FA2" stroke-width="1"/>'
+    +'<text x="'+nmx(ox+W/2)+'" y="'+(yb+13)+'" text-anchor="middle" font-family="Arial" font-size="11" fill="#7B1FA2">'
+    +nm2(larg)+' m de largura</text>';
+  var xl=ox-12;
+  s+='<line x1="'+xl+'" y1="'+oy+'" x2="'+xl+'" y2="'+nmx(oy+H)+'" stroke="#00838f" stroke-width="1"/>'
+    +'<text x="'+(xl-5)+'" y="'+nmx(oy+H/2)+'" text-anchor="middle" font-family="Arial" font-size="11" fill="#00838f" '
+    +'transform="rotate(-90 '+(xl-5)+' '+nmx(oy+H/2)+')">'+nm2(TIRA.len)+' m</text>';
+  s+='</svg>';
+  return s;
+}
+
+function renderRisco(){
+  var host=document.getElementById('risco-body');
+  if(!host)return;
+  var larg=parseFloat(LARG),html='',sec='';
+  for(var i=0;i<PECAS.length;i++){
+    var pk=PECAS[i].k,t=REND[LARG][pk],algum=0;
+    for(var s=0;s<SIZES.length;s++){
+      var tam=SIZES[s],r=t[tam];
+      if(!r)continue;
+      if(!algum){
+        html+='<div class="risco-sec">'+PECAS[i].n+(PECAS[i].tecido?' · '+PECAS[i].tecido:' · malha PV')+'</div>';
+        algum=1;
+      }
+      var area=r.len*larg, areaPc=area/r.un;
+      html+='<div class="risco-card">'
+        +'<div class="risco-hdr"><span>'+PECAS[i].n+' '+tam+'</span><span class="med">'+nm2(r.len)+' × '+nm2(larg)+' m</span></div>'
+        +'<div class="risco-svg">'+riscoSVG(pk,tam,r,larg)+'</div>'
+        +'<div class="risco-pe">Rende <b>'+r.un+' peça'+(r.un>1?'s':'')+'</b> por folha'
+        +(r.fr?' <span class="risco-sobra">+ '+r.fr+' frente que sobra</span>':'')
+        +'<br>'+nm2(area)+' m² de tecido · <b>'+nm3(areaPc)+' m² por peça</b></div>'
+        +'</div>';
+    }
+  }
+  if(!html)html='<div class="empty">Nenhum encaixe medido nesta largura.</div>';
+  /* tira de gola */
+  html+='<div class="risco-sec">Tira de gola · malha PV</div>'
+    +'<div class="risco-card">'
+    +'<div class="risco-hdr"><span>Tira de gola</span><span class="med">71 × 3 cm</span></div>'
+    +'<div class="risco-svg">'+riscoTiraSVG(larg)+'</div>'
+    +'<div class="risco-pe">Cortada <b>em pé, no sentido do fio</b> — por isso ocupa 0,71 m de comprimento.'
+    +'<br>Cabem <b>'+Math.floor(larg/TIRA.larg)+' tiras</b> nesta faixa, ou seja '+Math.floor(larg/TIRA.larg)+' camisetas.</div>'
+    +'</div>';
+  host.innerHTML=html;
+}
+
+/* ---------- GANHO EM PEÇAS COM O ESTOQUE REAL ---------- */
+function renderGanhoEstoque(){
+  var tb=document.getElementById('ganho-body');
+  if(!tb)return;
+  /* área total de malha PV disponível, somando as cores */
+  var areaTot=0;
+  for(var c=0;c<COLORS.length;c++){
+    var e=estoqueCor(COLORS[c].k,PV_LARG_REF);
+    if(e)areaTot+=e.areaDisp;
+  }
+  var html='',melhorDif=0,melhorNome='';
+  for(var i=0;i<PECAS.length;i++){
+    var pk=PECAS[i].k,first=1;
+    for(var s=0;s<SIZES.length;s++){
+      var tam=SIZES[s],ra=REND['0.94'][pk][tam],rb=REND['1.22'][pk][tam];
+      if(!ra||!rb)continue;
+      var na=Math.floor(areaTot/((ra.len/ra.un)*0.94));
+      var nb=Math.floor(areaTot/((rb.len/rb.un)*1.22));
+      var dif=nb-na;
+      if(dif>melhorDif){melhorDif=dif;melhorNome=PECAS[i].n+' '+tam;}
+      html+='<tr><td>'+(first?'<span class="badge '+PECAS[i].cls+'">'+PECAS[i].n+'</span>':'')+'</td><td><b>'+tam+'</b></td>'
+        +'<td class="r">'+na+' peças</td><td class="r"><b>'+nb+' peças</b></td>'
+        +'<td class="r eco">+'+dif+'</td></tr>';
+      first=0;
+    }
+  }
+  tb.innerHTML=html;
+  document.getElementById('ganho-cards').innerHTML=
+    card(nm2(areaTot)+' m²','malha PV disponível','')
+    +card(nm2(areaTot/PV_AREA_KG*1)+' kg','equivalente em quilo','teal')
+    +(melhorNome?card('+'+melhorDif+' peças','ganho máximo — '+melhorNome,'grn'):'');
 }
 
 /* ---------- COMPRAS ---------- */
@@ -599,7 +968,7 @@ function renderCompras(){
     +(tCom?card(nm2(tCom)+' m','comprar com 10%','ora')+card(nm1(tKg)+' kg','a comprar em quilo','ora'):'');
 }
 
-function render(){renderPedido();renderEnc();renderRend();renderCompras();}
+function render(){renderPedido();renderEnc();renderRisco();renderRend();renderCompras();}
 
 function exportState(){
   var txt=JSON.stringify({v:1,largura:LARG,qtd:st.qtd,cortado:st.cortado},null,2);
@@ -637,9 +1006,12 @@ function limpar(){
 }
 function restaurar(){
   if(!confirm('Voltar as quantidades para a ficha original da DanCERA? As marcações de corte são mantidas.'))return;
-  st.qtd=cloneQtd();save();render();
+  st.qtd=cloneQtd();save();
+  for(var k in st.qtd)syncPush('qtd',k,false,st.qtd[k]);
+  render();
 }
 render();
+iniciarSync();
 </script>
 
 </body>
