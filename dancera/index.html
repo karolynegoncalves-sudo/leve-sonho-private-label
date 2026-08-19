@@ -1001,6 +1001,16 @@ function riscoFicha(pk,tam,larg){
   if(Math.abs(larg-PV_LARG_REF)>0.001)return null;
   return FICHA_SVG[pk+'|'+tam]||null;
 }
+
+/* Encaixe B a partir do A: frente e costas tem a mesma largura e altura, entao
+   o desenho e o mesmo — o que muda e qual delas vai na dobra. Basta trocar os
+   dois nomes; as anotacoes "na dobra / sai 1" e "aberta / sai 2" ficam onde estao. */
+function riscoFichaB(pk,tam,larg){
+  var a=riscoFicha(pk,tam,larg);
+  if(!a)return null;
+  return a.replace(/>COSTAS</g,'><').replace(/>FRENTE</g,'>COSTAS<').replace(/></g,'>FRENTE<');
+}
+
 function riscoTracado(pk,tam,r,larg){
   var t=RISCO_SVG[pk+'|'+tam];
   if(!t)return null;
@@ -1177,19 +1187,30 @@ function renderRisco(){
         algum=1;
       }
       var area=r.len*larg, areaPc=area/r.un;
+      var temFicha=!!riscoFicha(pk,tam,larg);
       html+='<div class="risco-card">'
-        +'<div class="risco-hdr"><span>'+PECAS[i].n+' '+tam+'</span><span class="med">'+nm2(r.len)+' × '+nm2(larg)+' m</span></div>'
+        +'<div class="risco-hdr"><span>'+PECAS[i].n+' '+tam+(temFicha?' · encaixe A':'')+'</span><span class="med">'+nm2(r.len)+' × '+nm2(larg)+' m</span></div>'
         +'<div class="risco-svg">'+riscoSVG(pk,tam,r,larg)+'</div>'
         +'<div class="risco-pe">Rende <b>'+r.un+' peça'+(r.un>1?'s':'')+'</b> por folha'
         +(r.fr?' <span class="risco-sobra">+ '+r.fr+' frente que sobra</span>':'')
         +(riscoFicha(pk,tam,larg)?'<br><span style="color:#2e7d32;font-weight:bold">Risco da ficha técnica de modelagem</span>':'')
-        +'<br>Riscado: '+(r.un===1
+        +(temFicha?'<br>Rende <b>2 frentes, 1 costas e 2 mangas</b> por folha.':'')+'<br>Riscado: '+(r.un===1
           ? '<b>costas na dobra</b> (sai 1) + <b>frente aberta</b> (sai 2) + <b>1 manga</b> (sai 2)'
           : '<b>costas aberta</b> (sai 2) + <b>frente aberta</b> (sai 2) + <b>2 mangas</b> (sai 4)')
         +(riscoFicha(pk,tam,larg)?'.':', manga '+(r.lay==='cfm'?'na coluna da direita':(r.mp==='lado'?'na lateral':'na faixa de cima'))+'.')
         +'<br>Tubular: o contorno aberto corta <b>2 camadas</b> e sai em par; o que vai <b>na dobra</b> sai inteiro, só 1.'
         +'<br>'+nm2(area)+' m² na mesa · <b>'+nm3(areaPc)+' m² por peça</b></div>'
         +'</div>';
+      if(temFicha){
+        html+='<div class="risco-card" style="border-color:#7B1FA2">'
+          +'<div class="risco-hdr" style="background:#7B1FA2"><span>'+PECAS[i].n+' '+tam+' · encaixe B</span>'
+          +'<span class="med">'+nm2(r.len)+' × '+nm2(larg)+' m</span></div>'
+          +'<div class="risco-svg">'+riscoFichaB(pk,tam,larg)+'</div>'
+          +'<div class="risco-pe">Mesmo desenho do A, com a <b>dobra trocando de peça</b>: aqui a <b>frente</b> vai na dobra e sai 1, a <b>costas</b> vai aberta e sai 2.'
+          +'<br>Rende <b>1 frente, 2 costas e 2 mangas</b> por folha.'
+          +'<br><b>A + B = 3 peças</b>, faltando 1 par de mangas, que vem da faixa de mangas.</div>'
+          +'</div>';
+      }
     }
   }
   if(!html)html='<div class="empty">Nenhum encaixe medido nesta largura.</div>';
