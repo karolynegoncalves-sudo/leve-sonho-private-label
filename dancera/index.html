@@ -178,6 +178,7 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
   <button class="tab" onclick="showTab('enc',this)">✂️ Encaixe de Corte</button>
   <button class="tab" onclick="showTab('risco',this)">📐 Risco do Encaixe</button>
   <button class="tab" onclick="showTab('rend',this)">🧵 Rendimento &amp; Comparativo</button>
+  <button class="tab" onclick="showTab('lotes',this)">🧩 Corte por Lote</button>
   <button class="tab" onclick="showTab('compras',this)">🛒 Lista de Compras</button>
 </div>
 
@@ -273,6 +274,16 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
   <p class="note">Duas leituras diferentes. <b>Metro linear</b> é o que a nota fiscal cobra: no 1,22 m cada encaixe rende 2 peças no mesmo comprimento em que o 0,94 m rende 1, então o consumo em metros cai perto da metade — mas o metro do tecido mais largo custa mais caro, então esse número sozinho engana. <b>Área</b> é a comparação justa de aproveitamento: ali o ganho real do 1,22 m fica na casa dos 35%. Compare o preço por metro dos dois tecidos usando a coluna de área antes de decidir. As áreas são medidas <b>na mesa</b>, com o tubo achatado — os dois tecidos são tubulares, então a comparação entre eles é direta.</p>
 </div>
 
+<div id="lotes" class="section">
+  <h2>Corte por Lote</h2>
+  <div class="banner"><b>Regra que manda neste plano:</b> corpo, mangas e tira de uma peça têm que sair do <b>mesmo lote</b>, e um tamanho inteiro nunca é dividido entre dois lotes — senão a mesma grade sai com tons diferentes. Por isso o corte é planejado lote a lote, e cada lote leva as suas próprias faixas de tira.</div>
+  <div class="sgrid" id="lote-cards"></div>
+  <div id="lote-body"></div>
+  <h3>O que falta — comprar para completar</h3>
+  <div id="lote-falta"></div>
+  <p class="note">A alocação escolhe, dentro de cada lote, o conjunto de grupos que corta o <b>maior número de peças</b>; empatando, o que gasta menos tecido. A sobra de cada lote fica anotada: é retalho utilizável em outra coisa, não entra em peça deste pedido.</p>
+</div>
+
 <div id="compras" class="section">
   <h2>Lista de Compras</h2>
   <div class="sgrid" id="cmp-cards"></div>
@@ -315,14 +326,110 @@ function ehPV(pk){for(var i=0;i<PECAS.length;i++){if(PECAS[i].k===pk)return !!PE
 var PV_M_POR_KG_094=2.5, PV_LARG_REF=0.94;
 var PV_AREA_KG=PV_M_POR_KG_094*PV_LARG_REF;           /* 2,35 m² por kg */
 /* comprado pela DanCERA na Leve Sonho; usado_m medido na largura de referência */
-var ESTOQUE={preto:{kg:15,usado_m:0},branco:{kg:10,usado_m:0.83}};
+/* A malha chega em LOTES. Peca e tira tem que sair do MESMO lote (tom),
+   e um tamanho inteiro nao pode ser dividido entre lotes — senao a mesma
+   grade sai com tons diferentes. Por isso o corte e planejado lote a lote. */
+var LOTES=[
+ {id:'Preto 1',  cor:'preto',  kg:15, usado_m:0,    nota:'primeiro lote'},
+ {id:'Preto 2',  cor:'preto',  kg:5,  usado_m:0,    nota:'recebido em 19/08/2026'},
+ {id:'Branco 1', cor:'branco', kg:10, usado_m:0.83, nota:'0,83 m ja cortados'}
+];
+function lotesDaCor(ck){
+  var r=[];
+  for(var i=0;i<LOTES.length;i++)if(LOTES[i].cor===ck)r.push(LOTES[i]);
+  return r;
+}
+function metrosLote(l,larg){
+  return (l.kg*PV_AREA_KG - l.usado_m*PV_LARG_REF)/larg;
+}
 function estoqueCor(ck,larg){
-  var e=ESTOQUE[ck];
-  if(!e)return null;
-  var areaTotal=e.kg*PV_AREA_KG, areaUsada=e.usado_m*PV_LARG_REF;
-  var areaDisp=areaTotal-areaUsada;
-  return {kg:e.kg,usado_m:e.usado_m,areaTotal:areaTotal,areaDisp:areaDisp,
+  var ls=lotesDaCor(ck);
+  if(!ls.length)return null;
+  var kg=0,usado=0,areaDisp=0;
+  for(var i=0;i<ls.length;i++){
+    kg+=ls[i].kg; usado+=ls[i].usado_m;
+    areaDisp+=ls[i].kg*PV_AREA_KG-ls[i].usado_m*PV_LARG_REF;
+  }
+  return {kg:kg,usado_m:usado,areaDisp:areaDisp,lotes:ls.length,
           metros:areaDisp/larg,metrosRef:areaDisp/PV_LARG_REF};
+}
+
+/* grupos = um tamanho inteiro de uma peca numa cor; nunca se divide */
+function gruposDaCor(ck){
+  var g=[];
+  for(var i=0;i<PECAS.length;i++){
+    if(!ehPV(PECAS[i].k))continue;
+    for(var s=0;s<SIZES.length;s++){
+      var q=getQ(PECAS[i].k,SIZES[s],ck);
+      if(!q)continue;
+      var r=rend(PECAS[i].k,SIZES[s]);
+      if(!r)continue;
+      g.push({pk:PECAS[i].k,nome:PECAS[i].n,cls:PECAS[i].cls,tam:SIZES[s],qtd:q,
+              folhas:Math.ceil(q/r.un),metros:Math.ceil(q/r.un)*r.len,
+              tira:usaTira(PECAS[i].k)});
+    }
+  }
+  return g;
+}
+/* custo em metros de um conjunto de grupos, ja com as faixas de tira */
+function custoConjunto(gs,larg){
+  var m=0,pc=0,tiras=0;
+  for(var i=0;i<gs.length;i++){m+=gs[i].metros;pc+=gs[i].qtd;if(gs[i].tira)tiras+=gs[i].qtd;}
+  var ti=tiraInfo(tiras,larg);
+  return {metros:m+ti.metros,pecas:pc,tiras:tiras,faixas:ti.faixas,metrosTira:ti.metros,metrosCorpo:m};
+}
+/* escolhe o subconjunto de grupos que cabe no lote e corta MAIS pecas.
+   Empate: gasta menos tecido. Forca bruta — sao poucos grupos. */
+function melhorConjunto(grupos,disp,larg){
+  var n=grupos.length, melhor={pecas:-1,metros:0,idx:[]};
+  /* forca bruta: 2^n. Com muitos grupos cai para uma heuristica gulosa
+     (mais pecas por metro primeiro), senao a pagina trava. */
+  if(n>16){
+    var ord=grupos.slice(0).sort(function(a,b){return (a.metros/a.qtd)-(b.metros/b.qtd);});
+    var sel=[],idx=[];
+    for(var i=0;i<ord.length;i++){
+      var teste=sel.concat([ord[i]]);
+      if(custoConjunto(teste,larg).metros<=disp+0.0001){sel=teste;idx.push(grupos.indexOf(ord[i]));}
+    }
+    if(!sel.length)return {pecas:-1,metros:0,idx:[]};
+    var cc=custoConjunto(sel,larg);
+    return {pecas:cc.pecas,metros:cc.metros,idx:idx,custo:cc};
+  }
+  var total=1<<n;
+  for(var mask=0;mask<total;mask++){
+    var sel=[],idx=[];
+    for(var b=0;b<n;b++)if(mask&(1<<b)){sel.push(grupos[b]);idx.push(b);}
+    if(!sel.length)continue;
+    var c=custoConjunto(sel,larg);
+    if(c.metros>disp+0.0001)continue;
+    if(c.pecas>melhor.pecas||(c.pecas===melhor.pecas&&c.metros<melhor.metros)){
+      melhor={pecas:c.pecas,metros:c.metros,idx:idx,custo:c};
+    }
+  }
+  return melhor;
+}
+/* plano completo: percorre os lotes de cada cor e aloca grupos inteiros */
+function planoLotes(larg){
+  var plano=[],sobra=[];
+  for(var c=0;c<COLORS.length;c++){
+    var ck=COLORS[c].k, restantes=gruposDaCor(ck), ls=lotesDaCor(ck);
+    for(var i=0;i<ls.length;i++){
+      var disp=metrosLote(ls[i],larg);
+      var m=melhorConjunto(restantes,disp,larg);
+      var escolhidos=[];
+      if(m.pecas>0){
+        for(var k=m.idx.length-1;k>=0;k--){escolhidos.unshift(restantes[m.idx[k]]);}
+        var novos=[];
+        for(var j=0;j<restantes.length;j++)if(m.idx.indexOf(j)<0)novos.push(restantes[j]);
+        restantes=novos;
+      }
+      plano.push({lote:ls[i],cor:COLORS[c],disp:disp,grupos:escolhidos,
+                  custo:m.pecas>0?m.custo:{metros:0,pecas:0,tiras:0,faixas:0,metrosTira:0,metrosCorpo:0},
+                  folga:disp-(m.pecas>0?m.custo.metros:0)});
+    }
+    if(restantes.length)sobra.push({cor:COLORS[c],grupos:restantes,custo:custoConjunto(restantes,larg)});
+  }
+  return {plano:plano,sobra:sobra};
 }
 var FOLHAS_INFESTO=5;
 var PERDA=0.10;
@@ -1045,6 +1152,84 @@ function renderGanhoEstoque(){
     +(melhorNome?card('+'+melhorDif+' peças','ganho máximo — '+melhorNome,'grn'):'');
 }
 
+
+/* ---------- CORTE POR LOTE ---------- */
+function renderLotes(){
+  var host=document.getElementById('lote-body');
+  if(!host)return;
+  var larg=parseFloat(LARG), r=planoLotes(larg), html='';
+  var totPc=0,totMet=0,totSobra=0;
+  for(var i=0;i<r.plano.length;i++){
+    var b=r.plano[i];
+    totPc+=b.custo.pecas; totMet+=b.custo.metros; totSobra+=b.folga;
+    var linhas='';
+    for(var g=0;g<b.grupos.length;g++){
+      var gr=b.grupos[g];
+      linhas+='<div class="enc-row">'
+        +'<div class="c-chk"></div>'
+        +'<div class="e-nm"><span class="badge '+gr.cls+'">'+gr.nome+'</span> <b>'+gr.tam+'</b></div>'
+        +'<div class="c-num">'+gr.qtd+' pç</div>'
+        +'<div class="c-num">'+gr.folhas+' folhas</div>'
+        +'<div class="c-num hi">'+nm2(gr.metros)+' m</div></div>';
+    }
+    if(b.custo.faixas){
+      linhas+='<div class="enc-row" style="background:#f3eefa">'
+        +'<div class="c-chk"></div>'
+        +'<div class="e-nm"><b>Tira de gola</b> <span style="color:#777">deste lote</span></div>'
+        +'<div class="c-num">'+b.custo.tiras+' tiras</div>'
+        +'<div class="c-num">'+b.custo.faixas+' faixa'+(b.custo.faixas>1?'s':'')+'</div>'
+        +'<div class="c-num hi">'+nm2(b.custo.metrosTira)+' m</div></div>';
+    }
+    if(!linhas)linhas='<div class="enc-row"><div class="c-chk"></div><div class="e-nm" style="color:#999">Não sobra grupo inteiro que caiba neste lote.</div></div>';
+    html+='<div class="enc-bloco">'
+      +'<div class="enc-bloco-hdr"><span><span class="dot" style="background:'+b.cor.dot+'"></span>Lote '+b.lote.id
+      +'<span class="sub"> · '+nm1(b.lote.kg)+' kg · '+b.lote.nota+'</span></span>'
+      +'<span class="sub">'+b.custo.pecas+' peças · '+nm2(b.custo.metros)+' m de '+nm2(b.disp)+' m</span></div>'
+      +'<div class="col-hdr"><div class="c-chk"></div><div class="e-nm">Cortar</div><div class="c-num">Peças</div><div class="c-num">Folhas</div><div class="c-num">Metros</div></div>'
+      +linhas
+      +'<div class="enc-resumo"><span class="enc-tag">disponível '+nm2(b.disp)+' m</span>'
+      +'<span class="enc-tag ok">usa '+nm2(b.custo.metros)+' m</span>'
+      +'<span class="enc-tag'+(b.folga>1?' warn':'')+'">sobra '+nm2(b.folga)+' m</span></div>'
+      +'</div>';
+  }
+  host.innerHTML=html;
+
+  var fh='',fPc=0,fCom=0,fKg=0;
+  for(var s=0;s<r.sobra.length;s++){
+    var so=r.sobra[s], comprar=so.custo.metros*(1+PERDA), kg=comprar*larg/PV_AREA_KG;
+    fPc+=so.custo.pecas; fCom+=comprar; fKg+=kg;
+    var ll='';
+    for(var g2=0;g2<so.grupos.length;g2++){
+      var gg=so.grupos[g2];
+      ll+='<div class="enc-row"><div class="c-chk"></div>'
+        +'<div class="e-nm"><span class="badge '+gg.cls+'">'+gg.nome+'</span> <b>'+gg.tam+'</b></div>'
+        +'<div class="c-num">'+gg.qtd+' pç</div><div class="c-num">'+gg.folhas+' folhas</div>'
+        +'<div class="c-num hi">'+nm2(gg.metros)+' m</div></div>';
+    }
+    if(so.custo.faixas){
+      ll+='<div class="enc-row" style="background:#f3eefa"><div class="c-chk"></div>'
+        +'<div class="e-nm"><b>Tira de gola</b> <span style="color:#777">do lote novo</span></div>'
+        +'<div class="c-num">'+so.custo.tiras+' tiras</div><div class="c-num">'+so.custo.faixas+' faixa'+(so.custo.faixas>1?'s':'')+'</div>'
+        +'<div class="c-num hi">'+nm2(so.custo.metrosTira)+' m</div></div>';
+    }
+    fh+='<div class="enc-bloco" style="border-color:#ffcc80">'
+      +'<div class="enc-bloco-hdr" style="background:#e65100"><span><span class="dot" style="background:'+so.cor.dot+'"></span>Comprar — malha PV '+so.cor.n
+      +'</span><span class="sub">'+so.custo.pecas+' peças · '+nm2(comprar)+' m ≈ '+nm1(kg)+' kg</span></div>'
+      +'<div class="col-hdr"><div class="c-chk"></div><div class="e-nm">Falta cortar</div><div class="c-num">Peças</div><div class="c-num">Folhas</div><div class="c-num">Metros</div></div>'
+      +ll
+      +'<div class="enc-resumo"><span class="enc-tag">encaixe '+nm2(so.custo.metros)+' m</span>'
+      +'<span class="enc-tag warn">+10% = '+nm2(comprar)+' m</span>'
+      +'<span class="enc-tag warn">≈ '+nm1(kg)+' kg</span></div></div>';
+  }
+  document.getElementById('lote-falta').innerHTML=fh||'<div class="empty">Nada a comprar — os lotes cobrem o pedido inteiro.</div>';
+
+  document.getElementById('lote-cards').innerHTML=
+    card(totPc,'peças para cortar já','grn')
+    +card(nm2(totMet)+' m','tecido dos lotes atuais','teal')
+    +card(nm2(totSobra)+' m','sobra nos lotes','ora')
+    +(fPc?card(fPc,'peças aguardando compra','red')+card(nm1(fKg)+' kg','comprar','red'):card(0,'aguardando compra','grn'));
+}
+
 /* ---------- COMPRAS ---------- */
 function renderCompras(){
   var tb=document.getElementById('cmp-body'),html='',larg=parseFloat(LARG);
@@ -1106,7 +1291,7 @@ function renderCompras(){
     +(tCom?card(nm2(tCom)+' m','comprar com 10%','ora')+card(nm1(tKg)+' kg','a comprar em quilo','ora'):'');
 }
 
-function render(){renderPedido();renderEnc();renderRisco();renderRend();renderCompras();}
+function render(){renderPedido();renderEnc();renderRisco();renderRend();renderLotes();renderCompras();}
 
 function exportState(){
   var txt=JSON.stringify({v:1,largura:LARG,qtd:st.qtd,cortado:st.cortado},null,2);
