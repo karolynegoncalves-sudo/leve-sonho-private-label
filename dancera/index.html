@@ -201,7 +201,7 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
       <tfoot id="ped-foot"></tfoot>
     </table>
   </div>
-  <p class="note"><b>Tira de gola:</b> <b>camiseta e baby look</b> levam uma tira de 70 × 3,5 cm cada, cortada em pé, no sentido do fio — por isso ela consome 0,70 m de comprimento de tecido e entra somada ao total, e não dentro do encaixe da peça. Como a tira tem só 3,5 cm de largura, várias saem lado a lado na mesma faixa: no tecido de 0,94 m cabem 26 tiras por faixa, no de 1,22 m cabem 34. O moletom não leva tira; a regata ainda precisa ser conferida.</p>
+  <p class="note"><b>Tira de gola:</b> <b>camiseta e baby look</b> levam uma tira de 70 × 3,5 cm cada, cortada em pé, no sentido do fio — por isso ela consome 0,70 m de comprimento de tecido e entra somada ao total, e não dentro do encaixe da peça. Como a tira tem só 3,5 cm de largura, várias saem lado a lado na mesma faixa: descontando 2 cm de ourela de cada lado e 1 cm entre elas, cabem 20 tiras por faixa no tecido de 0,94 m e 26 no de 1,22 m. O moletom não leva tira; a regata ainda precisa ser conferida.</p>
   <p class="note">A coluna <b>Metros</b> conta folha cheia, não peça a peça — é o mesmo número do encaixe e da lista de compras. No tecido de 0,94 m dá no mesmo, porque cada folha rende 1 peça; no de 1,22 m, onde a folha rende 2, uma quantidade ímpar gasta a folha inteira e sobra meia folha.</p>
   <p class="note">Peças e tamanhos listados são os que têm encaixe medido. Se a ficha trouxer um tamanho sem medição (por exemplo camiseta PP ou moletom M), me avise que eu acrescento assim que vocês medirem na mesa.</p>
 </div>
@@ -431,15 +431,46 @@ function planoLotes(larg){
   }
   return {plano:plano,sobra:sobra};
 }
+/* Medidas dos moldes, em metros (largura x altura), medidas pela Karol em 19/08/2026.
+   Baby look: frente e costas tem a mesma largura e altura.
+   Camiseta: ainda nao medida.
+   ATENCAO: baby look G (0,57) saiu mais largo que GG (0,56) — a conferir. */
+var MOLDES={
+  bab:{
+    PP:{corpo:[0.475,0.66], manga:[0.18,0.35]},
+    P :{corpo:[0.495,0.69], manga:[0.19,0.365]},
+    M :{corpo:[0.51,0.70],  manga:[0.20,0.385]},
+    G :{corpo:[0.57,0.72],  manga:[0.215,0.39]},
+    GG:{corpo:[0.56,0.75],  manga:[0.225,0.42]}
+  },
+  cam:{}
+};
+/* faixa so de mangas: quantos pares saem por faixa e quanto ela come */
+function faixaMangas(pk,tam,larg){
+  var m=MOLDES[pk]&&MOLDES[pk][tam];
+  if(!m||!m.manga)return null;
+  var porFaixa=cabemNaLargura(m.manga[0],larg);   /* cada contorno sai em par (tubular) */
+  if(porFaixa<1)return null;
+  return {paresPorFaixa:porFaixa,altura:m.manga[1],larguraMolde:m.manga[0]};
+}
+
 var FOLHAS_INFESTO=5;
 var PERDA=0.10;
 /* tira de gola (camiseta e baby look): 70 cm de comprimento x 3,5 cm de largura,
    cortada em pe (no sentido do fio) -> consome 0,70 m de comprimento de tecido.
    Varias tiras cabem lado a lado na largura, entao uma faixa de 0,70 m atende muitas pecas. */
 var TIRA={len:0.70,larg:0.035,pecas:['cam','bab']};
+/* Perde-se 2 cm de cada lado na ourela e deixa-se 1 cm entre moldes.
+   Vale para tudo que eu calculo do zero (tira, mangas avulsas). Os encaixes
+   medidos na mesa ja embutem essas perdas — neles nao se aplica de novo. */
+var OURELA=0.02, FOLGA=0.01;
+function larguraUtil(larg){return larg-2*OURELA;}
+function cabemNaLargura(larguraMolde,larg){
+  return Math.floor((larguraUtil(larg)+FOLGA)/(larguraMolde+FOLGA));
+}
 function tiraInfo(qtd,larg){
   if(!qtd)return {tiras:0,porFaixa:0,faixas:0,metros:0};
-  var porFaixa=Math.floor(larg/TIRA.larg);
+  var porFaixa=cabemNaLargura(TIRA.larg,larg);
   var faixas=Math.ceil(qtd/porFaixa);
   return {tiras:qtd,porFaixa:porFaixa,faixas:faixas,metros:faixas*TIRA.len};
 }
