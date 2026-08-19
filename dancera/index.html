@@ -354,7 +354,7 @@ function qtdTiraCor(ck){
 var REND={
  '0.94':{
   cam:{P:{len:0.91,un:1,fr:1,obs:'1 un + 1 frente'},M:{len:0.93,un:1,fr:1,obs:'1 un + 1 frente'},G:{len:0.96,un:1,fr:1,obs:'1 un + 1 frente'},GG:{len:0.99,un:1,fr:1,obs:'1 un + 1 frente'}},
-  bab:{PP:{len:0.75,un:1,fr:1,mp:'lado',obs:'1 un + 1 frente'},P:{len:0.77,un:1,fr:1,mp:'lado',obs:'1 un + 1 frente'},M:{len:0.91,un:1,fr:1,obs:'1 un + 1 frente'},G:{len:0.95,un:1,fr:1,obs:'1 un + 1 frente'},GG:{len:1.00,un:1,fr:1,obs:'1 un + 1 frente'}},
+  bab:{PP:{len:0.75,un:1,fr:1,lay:'cfm',obs:'1 un + 1 frente'},P:{len:0.77,un:1,fr:1,mp:'lado',obs:'1 un + 1 frente'},M:{len:0.91,un:1,fr:1,obs:'1 un + 1 frente'},G:{len:0.95,un:1,fr:1,obs:'1 un + 1 frente'},GG:{len:1.00,un:1,fr:1,obs:'1 un + 1 frente'}},
   reg:{},
   mol:{P:{len:1.82,un:2,fr:0,obs:'encaixe em par, sem sobra; avulso sai 1,20 m · LARGURA A CONFIRMAR'}}
  },
@@ -769,7 +769,21 @@ var MOLDE={
        +'C0.81,0 0.85,0.02 0.85,0.06 L0.97,0.22 C0.99,0.26 0.96,0.30 0.92,0.29 L0.84,0.24 '
        +'C0.78,0.45 0.78,0.62 0.83,0.80 L0.86,1 L0.14,1 L0.17,0.80 C0.22,0.62 0.22,0.45 0.16,0.24 '
        +'L0.08,0.29 C0.04,0.30 0.01,0.26 0.03,0.22 Z',
-  manga:'M0,0.30 C0.20,0 0.80,0 1,0.30 L0.87,1 L0.13,1 Z'
+  manga:'M0,0.30 C0.20,0 0.80,0 1,0.30 L0.87,1 L0.13,1 Z',
+  /* COSTAS riscada na dobra: lado esquerdo reto (a dobra), decote no alto
+     junto da dobra, cava e lateral do lado direito, barra arredondada. */
+  meiaCosta:'M0,0.04 C0.10,0.03 0.20,0.01 0.32,0 L0.60,0 '
+       +'C0.67,0.01 0.73,0.05 0.77,0.11 L0.90,0.25 '
+       +'C0.94,0.30 0.90,0.36 0.85,0.33 L0.78,0.28 '
+       +'C0.81,0.55 0.88,0.80 0.97,0.94 C0.70,1.00 0.30,1.00 0,0.99 Z',
+  /* FRENTE riscada aberta: peca inteira e simetrica, decote no centro,
+     duas cavas, barra arredondada. */
+  frenteInt:'M0.20,0.06 C0.20,0.02 0.24,0 0.28,0 L0.38,0 '
+       +'C0.41,0.09 0.59,0.09 0.62,0 L0.72,0 C0.76,0 0.80,0.02 0.80,0.06 '
+       +'L0.94,0.22 C0.98,0.27 0.95,0.33 0.90,0.31 L0.84,0.26 '
+       +'C0.87,0.55 0.94,0.80 1,0.92 C0.72,1.00 0.28,1.00 0,0.92 '
+       +'C0.06,0.80 0.13,0.55 0.16,0.26 L0.10,0.31 '
+       +'C0.05,0.33 0.02,0.27 0.06,0.22 Z'
 };
 function svgPeca(d,x,y,w,h,fill){
   /* non-scaling-stroke já ignora a escala do transform — a espessura vai
@@ -818,32 +832,48 @@ function riscoSVG(pk,tam,r,larg){
   var wCorpo=(W-3*m)/2;
   var yCorpo=oy+faixaMangas+m;
 
-  if(mangaLado){
-    var colM=0.26*W;
-    wCorpo=(W-colM-3*m)/2;
-    hCorpo=H-2*m; yCorpo=oy+m;
-    var hm=(H-(nMangas+1)*m)/nMangas;
-    for(var j=0;j<nMangas;j++){
-      s+=svgPeca(MOLDE.manga, ox+W-colM+m, oy+m+j*(hm+m), colM-2*m, hm, '#fff');
-      s+=svgRotulo(ox+W-colM+m, oy+m+j*(hm+m), colM-2*m, hm, 'MANGA','sai 2');
+  if(r.lay==='cfm'){
+    /* Arranjo da ficha: COSTAS na dobra a esquerda (meio molde, mais estreita),
+       FRENTE inteira no centro (mais larga) e as MANGAS empilhadas a direita. */
+    var colM=0.20*W, wCos=0.24*W, wFre=W-colM-wCos-4*m;
+    var yC=oy+m, hC=H-2*m;
+    s+=svgPeca(MOLDE.meiaCosta, ox+1, yC, wCos, hC, '#fff');
+    s+=svgRotulo(ox+1, yC, wCos, hC, 'COSTAS','na dobra · sai 1');
+    var xF=ox+1+wCos+m;
+    s+=svgPeca(MOLDE.frenteInt, xF, yC, wFre, hC, '#fff');
+    s+=svgRotulo(xF, yC, wFre, hC, 'FRENTE','aberta · sai 2');
+    var nM=r.un, hm=Math.min((H-(nM+1)*m)/nM,0.42*H), xM=ox+W-colM-m;
+    for(var k=0;k<nM;k++){
+      s+=svgPeca(MOLDE.manga, xM, oy+m+k*(hm+m), colM, hm, '#fff');
+      s+=svgRotulo(xM, oy+m+k*(hm+m), colM, hm, 'MANGA','sai 2');
     }
   }else{
-    var wm=Math.min((W-3*m)/2,(W-(nMangas+1)*m)/nMangas);
-    var xIni=ox+(W-(nMangas*wm+(nMangas-1)*m))/2;
-    for(var i=0;i<nMangas;i++){
-      s+=svgPeca(MOLDE.manga, xIni+i*(wm+m), oy+m, wm, faixaMangas-m, '#fff');
-      s+=svgRotulo(xIni+i*(wm+m), oy+m, wm, faixaMangas-m, 'MANGA','sai 2');
+    if(mangaLado){
+      var colM=0.26*W;
+      wCorpo=(W-colM-3*m)/2;
+      hCorpo=H-2*m; yCorpo=oy+m;
+      var hm=(H-(nMangas+1)*m)/nMangas;
+      for(var j=0;j<nMangas;j++){
+        s+=svgPeca(MOLDE.manga, ox+W-colM+m, oy+m+j*(hm+m), colM-2*m, hm, '#fff');
+        s+=svgRotulo(ox+W-colM+m, oy+m+j*(hm+m), colM-2*m, hm, 'MANGA','sai 2');
+      }
+    }else{
+      var wm=Math.min((W-3*m)/2,(W-(nMangas+1)*m)/nMangas);
+      var xIni=ox+(W-(nMangas*wm+(nMangas-1)*m))/2;
+      for(var i=0;i<nMangas;i++){
+        s+=svgPeca(MOLDE.manga, xIni+i*(wm+m), oy+m, wm, faixaMangas-m, '#fff');
+        s+=svgRotulo(xIni+i*(wm+m), oy+m, wm, faixaMangas-m, 'MANGA','sai 2');
+      }
     }
+
+    /* COSTAS à esquerda, encostada na dobra quando é o caso; FRENTE à direita */
+    var xCostas=costasNaDobra?ox+1:ox+m;
+    s+=svgPeca(corpoD, xCostas, yCorpo, wCorpo, hCorpo, '#fff');
+    s+=svgRotulo(xCostas, yCorpo, wCorpo, hCorpo, 'COSTAS', costasNaDobra?'na dobra · sai 1':'aberta · sai 2');
+    var xFrente=ox+W-wCorpo-m;
+    s+=svgPeca(corpoD, xFrente, yCorpo, wCorpo, hCorpo, '#fff');
+    s+=svgRotulo(xFrente, yCorpo, wCorpo, hCorpo, 'FRENTE','aberta · sai 2');
   }
-
-  /* COSTAS à esquerda, encostada na dobra quando é o caso; FRENTE à direita */
-  var xCostas=costasNaDobra?ox+1:ox+m;
-  s+=svgPeca(corpoD, xCostas, yCorpo, wCorpo, hCorpo, '#fff');
-  s+=svgRotulo(xCostas, yCorpo, wCorpo, hCorpo, 'COSTAS', costasNaDobra?'na dobra · sai 1':'aberta · sai 2');
-  var xFrente=ox+W-wCorpo-m;
-  s+=svgPeca(corpoD, xFrente, yCorpo, wCorpo, hCorpo, '#fff');
-  s+=svgRotulo(xFrente, yCorpo, wCorpo, hCorpo, 'FRENTE','aberta · sai 2');
-
   /* marca a dobra do tubo onde a costas está encostada */
   if(costasNaDobra){
     s+='<line x1="'+nmx(ox+1)+'" y1="'+oy+'" x2="'+nmx(ox+1)+'" y2="'+nmx(oy+H)+'" '
@@ -918,7 +948,7 @@ function renderRisco(){
         +'<br>Riscado: '+(r.un===1
           ? '<b>costas na dobra</b> (sai 1) + <b>frente aberta</b> (sai 2) + <b>1 manga</b> (sai 2)'
           : '<b>costas aberta</b> (sai 2) + <b>frente aberta</b> (sai 2) + <b>2 mangas</b> (sai 4)')
-        +', manga '+(r.mp==='lado'?'na lateral':'na faixa de cima')+'.'
+        +', manga '+(r.lay==='cfm'?'na coluna da direita':(r.mp==='lado'?'na lateral':'na faixa de cima'))+'.'
         +'<br>Tubular: o contorno aberto corta <b>2 camadas</b> e sai em par; o que vai <b>na dobra</b> sai inteiro, só 1.'
         +'<br>'+nm2(area)+' m² na mesa · <b>'+nm3(areaPc)+' m² por peça</b></div>'
         +'</div>';
