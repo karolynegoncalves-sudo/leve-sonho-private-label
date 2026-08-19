@@ -820,6 +820,37 @@ function renderEnc(){
             +'<div class="c-num">'+q+' pç</div><div class="c-num">—</div><div class="c-num">—</div><div class="c-num">—</div><div class="c-num">—</div></div>';
           continue;
         }
+        var alt=ALTERNADO?custoAlternado(pk,tam,q,r,parseFloat(LARG)):null;
+        if(alt){
+          /* corte A e corte B em linhas separadas, mais a faixa de mangas */
+          bQtd+=q; bPc+=q; bMet+=alt.metros; bFol+=alt.folhas;
+          var infA=Math.ceil(alt.a/FOLHAS_INFESTO), infB=Math.ceil(alt.b/FOLHAS_INFESTO);
+          bInf+=infA+infB;
+          function linha(rot,sub,chave,pedido,folhas,infestos,sobra,metros,cor){
+            var d=st.cortado[chave]?1:0; total++; if(d)feitos++;
+            return '<div class="enc-row'+(d?' cortado':'')+'"'+(cor?' style="background:'+cor+'"':'')+'>'
+              +'<div class="c-chk"><input type="checkbox" '+(d?'checked':'')+' aria-label="'+rot+' '+tam+'" onchange="onChk(this,&#39;'+chave+'&#39;)"></div>'
+              +'<div class="e-nm"><b>'+rot+'</b> <span style="color:#777">'+sub+'</span>'+(d?selo(chave):'')+'</div>'
+              +'<div class="c-num">'+pedido+'</div>'
+              +'<div class="c-num">'+folhas+'</div>'
+              +'<div class="c-num">'+infestos+'</div>'
+              +'<div class="c-num">'+sobra+'</div>'
+              +'<div class="c-num hi">'+nm2(metros)+' m</div></div>';
+          }
+          var base=LARG+'|'+pk+'|'+tam+'|'+ck;
+          rows+=linha('Corte A · '+tam,'frente aberta · costas na dobra',base+'|A',
+            q+' pç',alt.a+' folha'+(alt.a>1?'s':''),infA+'',
+            (alt.sobraFrente?alt.sobraFrente+' frente'+(alt.sobraFrente>1?'s':''):'—'),alt.a*r.len,'');
+          rows+=linha('Corte B · '+tam,'frente na dobra · costas aberta',base+'|B',
+            '—',alt.b+' folha'+(alt.b>1?'s':''),infB+'',
+            (alt.sobraCostas?alt.sobraCostas+' costas':'—'),alt.b*r.len,'');
+          if(alt.faixas){
+            rows+=linha('Mangas · '+tam,alt.paresPorFaixa+' pares por faixa',base+'|MG',
+              alt.paresFalta+' pares',alt.faixas+' faixa'+(alt.faixas>1?'s':''),'—','—',
+              alt.metrosManga,'#f3eefa');
+          }
+          continue;
+        }
         var fol=Math.ceil(q/r.un),inf=Math.ceil(fol/FOLHAS_INFESTO),met=fol*r.len,rend_pc=fol*r.un;
         var fre=fol*(r.fr||0);
         bFol+=fol;bMet+=met;bPc+=rend_pc;bInf+=inf;bFre+=fre;bQtd+=q;
@@ -843,7 +874,7 @@ function renderEnc(){
         +'<div class="enc-bloco-hdr"><span><span class="dot" style="background:'+COLORS[c].dot+'"></span>'+PECAS[i].n+' — '+COLORS[c].n
         +'<span class="sub"> · tecido '+LARG.replace('.',',')+' m</span></span><span class="sub">'+bPc+' peças · '+nm2(bMet)+' m</span></div>'
         +'<div class="enc-inf-hdr"><span class="inf-badge">'+bInf+' infesto'+(bInf>1?'s':'')+'</span> infesto de até '+FOLHAS_INFESTO+' folhas</div>'
-        +'<div class="col-hdr"><div class="c-chk"></div><div class="e-nm">Tamanho</div><div class="c-num">Pedido</div><div class="c-num">Folhas</div><div class="c-num">Infestos</div><div class="c-num">Frentes sobrando</div><div class="c-num">Metros</div></div>'
+        +'<div class="col-hdr"><div class="c-chk"></div><div class="e-nm">'+(ALTERNADO?'Corte':'Tamanho')+'</div><div class="c-num">Pedido</div><div class="c-num">Folhas</div><div class="c-num">Infestos</div><div class="c-num">'+(ALTERNADO?'Sobra':'Frentes sobrando')+'</div><div class="c-num">Metros</div></div>'
         +rows
         +'<div class="enc-resumo"><span class="enc-tag">'+bFol+' folhas</span><span class="enc-tag ok">'+bPc+' peças cortadas</span>'
         +(bFre?'<span class="enc-tag warn">'+bFre+' frentes sobrando — encaixar em par elimina</span>':'<span class="enc-tag ok">sem sobra de frente</span>')
@@ -1179,6 +1210,7 @@ function renderRisco(){
   var larg=parseFloat(LARG),html='',sec='';
   for(var i=0;i<PECAS.length;i++){
     var pk=PECAS[i].k,t=REND[LARG][pk],algum=0;
+    if(pk==='mol')continue;   /* moletom fora do risco: e PA 2 cabos, ainda sem modelagem */
     for(var s=0;s<SIZES.length;s++){
       var tam=SIZES[s],r=t[tam];
       if(!r)continue;
