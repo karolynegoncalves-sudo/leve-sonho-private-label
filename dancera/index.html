@@ -117,6 +117,19 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
 .risco-pe b{color:#1a1a2e}
 .risco-sobra{color:#e65100;font-weight:bold}
 .risco-sec{grid-column:1/-1;font-size:12px;font-weight:bold;color:#7B1FA2;text-transform:uppercase;letter-spacing:.5px;margin-top:6px;padding-bottom:4px;border-bottom:2px solid #ede7f6}
+
+.prod-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:5px 14px 8px 42px;background:#fbfbfd;border-bottom:1px solid #f0f0f5}
+.prod-row.ok{background:#f4fbf5}
+.prod-row label{font-size:10px;color:#999;font-weight:bold;text-transform:uppercase;letter-spacing:.3px}
+.inp-prod{padding:4px 7px;border:1px solid #ccc;border-radius:4px;font-size:11.5px;font-family:inherit;width:70px;text-align:right}
+.inp-prod.data{width:130px;text-align:left}
+.inp-prod.sel{width:auto;text-align:left}
+.inp-prod.obs{flex:1;min-width:150px;text-align:left}
+.inp-prod:focus{outline:none;border-color:#7B1FA2}
+.pill-falta{background:#fdecea;color:#c62828;border-radius:10px;padding:1px 8px;font-size:10px;font-weight:bold}
+.enc-row.parcial{background:#fff8e1}
+.enc-filtros{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.enc-filtros .lb{font-size:11.5px;font-weight:bold;color:#555}
 .falta-sim{color:#c62828;font-weight:bold}
 .falta-nao{color:#2e7d32;font-weight:bold}
 .win{background:#e8f5e9!important}
@@ -209,6 +222,13 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
 
 <div id="enc" class="section">
   <h2>Encaixe de Corte</h2>
+  <div class="enc-filtros">
+    <span class="lb">Ver:</span>
+    <button class="efbtn encf active" onclick="encFiltro('todos',this)">Todos</button>
+    <button class="efbtn encf" onclick="encFiltro('pendente',this)">Pendentes</button>
+    <button class="efbtn encf" onclick="encFiltro('cortado',this)">Cortados</button>
+    <button class="efbtn encf" onclick="encFiltro('faltou',this)">Cortes que faltaram</button>
+  </div>
   <div class="sgrid" id="enc-cards"></div>
   <div id="enc-body"></div>
   <p class="note">Um bloco por peça e cor. Cada folha do infesto rende o número de peças medido na mesa; o infesto fecha em 5 folhas e o excedente abre um novo infesto. Marque a linha quando aquele grupo estiver cortado. <b>Frentes sobrando</b> é o desperdício que está dentro do preço no tecido de 0,94 m: uma frente por folha, sem costas para fechar peça. Alinhar as quantidades e medir um encaixe em par — como já existe no moletom — é o que zera essa coluna.</p>
@@ -559,8 +579,8 @@ function cloneQtd(){var o={};for(var k in DEFAULT_QTD)o[k]=DEFAULT_QTD[k];return
 
 var LARG='0.94';
 var KEY='dancera_pl_corte_v1';
-var st={qtd:cloneQtd(),cortado:{}};
-try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p.qtd)st.qtd=p.qtd;st.cortado=p.cortado||{};}}catch(e){}
+var st={qtd:cloneQtd(),cortado:{},prod:{}};
+try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p.qtd)st.qtd=p.qtd;st.cortado=p.cortado||{};st.prod=p.prod||{};}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
 
 /* ---------- SINCRONIZAÇÃO EM TEMPO REAL (Google Sheets via Apps Script) ----------
@@ -637,6 +657,14 @@ function applyRemoteState(rows){
     if(aba==='corte'){
       var novo=ok?1:0;
       if((st.cortado[chave]?1:0)!==novo){st.cortado[chave]=novo;mudou=true;}
+      if(c2){
+        try{var pr=JSON.parse(c2);
+          if(pr&&typeof pr==='object'){
+            if(!st.prod)st.prod={};
+            var at1=JSON.stringify(st.prod[chave]||{}), at2=JSON.stringify(pr);
+            if(at1!==at2){st.prod[chave]=pr;mudou=true;}
+          }}catch(e){}
+      }
       quem[chave]={by:by,at:at};
     }else if(aba==='qtd'){
       var v=parseInt(c2,10);if(isNaN(v)||v<0)v=0;
@@ -735,7 +763,9 @@ function onQtd(el,pk,tam,ck){
 function onChk(el,key){
   st.cortado[key]=el.checked?1:0;
   if(syncUser)quem[key]={by:syncUser,at:new Date().toISOString()};
-  save();syncPush('corte',key,el.checked,'');render();
+  save();
+  syncPush('corte',key,el.checked,JSON.stringify((st.prod&&st.prod[key])||{}));
+  render();
 }
 
 /* ---------- PEDIDO ---------- */
@@ -804,6 +834,117 @@ function renderPedido(){
 function card(v,l,cls){return '<div class="scard '+(cls||'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
 
 /* ---------- ENCAIXE ---------- */
+/* ---------- ENCAIXE DE CORTE: pendentes / cortados / faltaram + produção ---------- */
+var ENC_FILTRO='todos';
+var MOTIVOS=['Faltou tecido','Faltou tempo','Erro de encaixe','Molde ou medida','Defeito no tecido','Outro'];
+
+function prodDe(k){
+  var p=st.prod&&st.prod[k];
+  return p?p:{f:'',d:'',m:'',o:''};
+}
+function situacao(k,planejado){
+  var p=prodDe(k), feitas=(p.f===''||p.f===null||p.f===undefined)?null:Number(p.f);
+  var chk=st.cortado[k]?1:0;
+  if(feitas!==null&&feitas<planejado)return 'faltou';
+  if(chk)return 'cortado';
+  if(feitas!==null&&feitas>0)return 'faltou';
+  return 'pendente';
+}
+function encFiltro(f,btn){
+  ENC_FILTRO=f;
+  var bs=document.querySelectorAll('.encf');
+  for(var i=0;i<bs.length;i++)bs[i].className='efbtn encf';
+  if(btn)btn.className='efbtn encf active';
+  renderEnc();
+}
+function onProd(el,k,campo){
+  if(!st.prod)st.prod={};
+  if(!st.prod[k])st.prod[k]={f:'',d:'',m:'',o:''};
+  st.prod[k][campo]=el.value;
+  if(syncUser)quem[k]={by:syncUser,at:new Date().toISOString()};
+  save();
+  syncPush('corte',k,!!st.cortado[k],JSON.stringify(st.prod[k]));
+  var id=el.id, pos=(el.type==='number'||el.type==='text')?el.selectionStart:null;
+  renderEnc();
+  var novo=document.getElementById(id);
+  if(novo){novo.focus();if(pos!==null){try{novo.setSelectionRange(pos,pos);}catch(e){}}}
+}
+
+/* uma linha de corte, com estado e campos de produção */
+function encLinha(o){
+  /* o = {chave, rotulo, sub, pedido, folhas, infestos, sobra, metros, fundo} */
+  var k=o.chave, sit=situacao(k,o.folhas), p=prodDe(k);
+  if(ENC_FILTRO!=='todos'&&ENC_FILTRO!==sit)return '';
+  var done=st.cortado[k]?1:0;
+  var idF='f_'+k.replace(/[^a-zA-Z0-9]/g,'_');
+  var idD='d_'+k.replace(/[^a-zA-Z0-9]/g,'_');
+  var idO='o_'+k.replace(/[^a-zA-Z0-9]/g,'_');
+  var cls='enc-row'+(sit==='cortado'?' cortado':'')+(sit==='faltou'?' parcial':'');
+  var s='<div class="'+cls+'"'+(o.fundo&&sit==='pendente'?' style="background:'+o.fundo+'"':'')+'>'
+    +'<div class="c-chk"><input type="checkbox" '+(done?'checked':'')+' aria-label="Cortado '+o.rotulo+'"'
+      +' onchange="onChk(this,&#39;'+k+'&#39;)"></div>'
+    +'<div class="e-nm"><b>'+o.rotulo+'</b> <span style="color:#777">'+o.sub+'</span>'
+      +(done?selo(k):'')
+      +(sit==='faltou'?' <span class="pill-falta">faltou</span>':'')+'</div>'
+    +'<div class="c-num">'+o.pedido+'</div>'
+    +'<div class="c-num">'+o.folhas+' folha'+(o.folhas>1?'s':'')+'</div>'
+    +'<div class="c-num">'+o.infestos+'</div>'
+    +'<div class="c-num">'+o.sobra+'</div>'
+    +'<div class="c-num hi">'+nm2(o.metros)+' m</div>'
+    +'</div>'
+    +'<div class="prod-row'+(sit==='cortado'?' ok':'')+'">'
+    +'<label>Folhas cortadas</label>'
+    +'<input id="'+idF+'" class="inp-prod" type="number" min="0" step="1" placeholder="'+o.folhas+'" value="'+(p.f===''?'':p.f)+'"'
+      +' oninput="onProd(this,&#39;'+k+'&#39;,&#39;f&#39;)">'
+    +'<label>Enviado p/ costura</label>'
+    +'<input id="'+idD+'" class="inp-prod data" type="date" value="'+(p.d||'')+'"'
+      +' onchange="onProd(this,&#39;'+k+'&#39;,&#39;d&#39;)">';
+  if(sit==='faltou'){
+    s+='<label>Motivo</label><select class="inp-prod sel" onchange="onProd(this,&#39;'+k+'&#39;,&#39;m&#39;)">'
+      +'<option value="">— escolher —</option>';
+    for(var i=0;i<MOTIVOS.length;i++)
+      s+='<option value="'+MOTIVOS[i]+'"'+(p.m===MOTIVOS[i]?' selected':'')+'>'+MOTIVOS[i]+'</option>';
+    s+='</select>'
+      +'<input id="'+idO+'" class="inp-prod obs" type="text" placeholder="Observação" value="'+(p.o||'').replace(/"/g,'&quot;')+'"'
+      +' oninput="onProd(this,&#39;'+k+'&#39;,&#39;o&#39;)">';
+  }
+  s+='</div>';
+  return s;
+}
+
+
+/* todas as linhas de corte da largura atual, com o numero de folhas planejado.
+   Usada pelos contadores, para nao dependerem do filtro ativo. */
+function encTodasChaves(){
+  var larg=parseFloat(LARG), out=[];
+  for(var i=0;i<PECAS.length;i++){
+    for(var c=0;c<COLORS.length;c++){
+      var pk=PECAS[i].k, ck=COLORS[c].k;
+      for(var s=0;s<SIZES.length;s++){
+        var tam=SIZES[s], q=getQ(pk,tam,ck);
+        if(!q)continue;
+        var r=rend(pk,tam);
+        if(!r)continue;
+        var base=LARG+'|'+pk+'|'+tam+'|'+ck;
+        var alt=ALTERNADO?custoAlternado(pk,tam,q,r,larg):null;
+        if(alt){
+          out.push({k:base+'|A',fol:alt.a});
+          out.push({k:base+'|B',fol:alt.b});
+          if(alt.faixas)out.push({k:base+'|MG',fol:alt.faixas});
+        }else{
+          out.push({k:base,fol:Math.ceil(q/r.un)});
+        }
+      }
+    }
+  }
+  for(var ct=0;ct<COLORS.length;ct++){
+    var qct=qtdTiraCor(COLORS[ct].k);
+    if(!qct)continue;
+    out.push({k:LARG+'|tira|'+COLORS[ct].k,fol:tiraInfo(qct,larg).faixas});
+  }
+  return out;
+}
+
 function renderEnc(){
   var host=document.getElementById('enc-body'),html='';
   var totInf=0,totFol=0,totMet=0,totPc=0,totFre=0,feitos=0,total=0;
@@ -826,28 +967,17 @@ function renderEnc(){
           bQtd+=q; bPc+=q; bMet+=alt.metros; bFol+=alt.folhas;
           var infA=Math.ceil(alt.a/FOLHAS_INFESTO), infB=Math.ceil(alt.b/FOLHAS_INFESTO);
           bInf+=infA+infB;
-          function linha(rot,sub,chave,pedido,folhas,infestos,sobra,metros,cor){
-            var d=st.cortado[chave]?1:0; total++; if(d)feitos++;
-            return '<div class="enc-row'+(d?' cortado':'')+'"'+(cor?' style="background:'+cor+'"':'')+'>'
-              +'<div class="c-chk"><input type="checkbox" '+(d?'checked':'')+' aria-label="'+rot+' '+tam+'" onchange="onChk(this,&#39;'+chave+'&#39;)"></div>'
-              +'<div class="e-nm"><b>'+rot+'</b> <span style="color:#777">'+sub+'</span>'+(d?selo(chave):'')+'</div>'
-              +'<div class="c-num">'+pedido+'</div>'
-              +'<div class="c-num">'+folhas+'</div>'
-              +'<div class="c-num">'+infestos+'</div>'
-              +'<div class="c-num">'+sobra+'</div>'
-              +'<div class="c-num hi">'+nm2(metros)+' m</div></div>';
-          }
           var base=LARG+'|'+pk+'|'+tam+'|'+ck;
-          rows+=linha('Corte A · '+tam,'frente aberta · costas na dobra',base+'|A',
-            q+' pç',alt.a+' folha'+(alt.a>1?'s':''),infA+'',
-            (alt.sobraFrente?alt.sobraFrente+' frente'+(alt.sobraFrente>1?'s':''):'—'),alt.a*r.len,'');
-          rows+=linha('Corte B · '+tam,'frente na dobra · costas aberta',base+'|B',
-            '—',alt.b+' folha'+(alt.b>1?'s':''),infB+'',
-            (alt.sobraCostas?alt.sobraCostas+' costas':'—'),alt.b*r.len,'');
+          rows+=encLinha({chave:base+'|A',rotulo:'Corte A · '+tam,sub:'frente aberta · costas na dobra',
+            pedido:q+' pç',folhas:alt.a,infestos:infA,
+            sobra:(alt.sobraFrente?alt.sobraFrente+' frente'+(alt.sobraFrente>1?'s':''):'—'),metros:alt.a*r.len});
+          rows+=encLinha({chave:base+'|B',rotulo:'Corte B · '+tam,sub:'frente na dobra · costas aberta',
+            pedido:'—',folhas:alt.b,infestos:infB,
+            sobra:(alt.sobraCostas?alt.sobraCostas+' costas':'—'),metros:alt.b*r.len});
           if(alt.faixas){
-            rows+=linha('Mangas · '+tam,alt.paresPorFaixa+' pares por faixa',base+'|MG',
-              alt.paresFalta+' pares',alt.faixas+' faixa'+(alt.faixas>1?'s':''),'—','—',
-              alt.metrosManga,'#f3eefa');
+            rows+=encLinha({chave:base+'|MG',rotulo:'Mangas · '+tam,sub:alt.paresPorFaixa+' pares por faixa',
+              pedido:alt.paresFalta+' pares',folhas:alt.faixas,infestos:'—',sobra:'—',
+              metros:alt.metrosManga,fundo:'#f3eefa'});
           }
           continue;
         }
@@ -890,29 +1020,35 @@ function renderEnc(){
     var ti=tiraInfo(qct,parseFloat(LARG));
     totMet+=ti.metros;
     var keyT=LARG+'|tira|'+COLORS[ct].k;
-    var doneT=st.cortado[keyT]?1:0;total++;if(doneT)feitos++;
+    total++;if(st.cortado[keyT])feitos++;
     html+='<div class="enc-bloco">'
       +'<div class="enc-bloco-hdr"><span><span class="dot" style="background:'+COLORS[ct].dot+'"></span>Tira de gola — '+COLORS[ct].n
       +'<span class="sub"> · 70 × 3,5 cm · em pé, no sentido do fio</span></span><span class="sub">'+ti.tiras+' tiras · '+nm2(ti.metros)+' m</span></div>'
       +'<div class="enc-inf-hdr"><span class="inf-badge">'+ti.faixas+' faixa'+(ti.faixas>1?'s':'')+'</span> cabem '+ti.porFaixa+' tiras lado a lado nesta largura</div>'
-      +'<div class="enc-row'+(doneT?' cortado':'')+'">'
-      +'<div class="c-chk"><input type="checkbox" '+(doneT?'checked':'')+' aria-label="Tira de gola '+COLORS[ct].n+' cortada" onchange="onChk(this,\''+keyT+'\')"></div>'
-      +'<div class="e-nm"><b>Camiseta + baby look</b>'+(doneT?selo(keyT):'')+'</div>'
-      +'<div class="c-num">'+ti.tiras+' tiras</div>'
-      +'<div class="c-num">'+ti.faixas+' faixa'+(ti.faixas>1?'s':'')+'</div>'
-      +'<div class="c-num">'+ti.porFaixa+'/faixa</div>'
-      +'<div class="c-num">—</div>'
-      +'<div class="c-num hi">'+nm2(ti.metros)+' m</div></div>'
+      +encLinha({chave:keyT,rotulo:'Tira de gola',sub:'camiseta + baby look',
+          pedido:ti.tiras+' tiras',folhas:ti.faixas,infestos:'—',sobra:ti.porFaixa+'/faixa',metros:ti.metros})
       +'</div>';
   }
   host.innerHTML=html||'<div class="empty">Nenhuma quantidade lançada ainda.<br>Preencha a ficha na aba <b>Pedido</b> que o encaixe aparece aqui.</div>';
-  var pct=total?Math.round(feitos/total*100):0;
+  /* contagem por situacao, para os cards */
+  var nPend=0,nCort=0,nFalt=0,nCost=0;
+  (function(){
+    var tudo=encTodasChaves();
+    for(var i2=0;i2<tudo.length;i2++){
+      var s2=situacao(tudo[i2].k,tudo[i2].fol);
+      if(s2==='pendente')nPend++; else if(s2==='cortado')nCort++; else nFalt++;
+      if(prodDe(tudo[i2].k).d)nCost++;
+    }
+  })();
+  var totLinhas=nPend+nCort+nFalt;
+  var pct=totLinhas?Math.round(nCort/totLinhas*100):0;
   document.getElementById('enc-cards').innerHTML=
-    card(totInf,'infestos a montar','')
-    +card(totFol,'folhas no total','teal')
-    +card(nm2(totMet)+' m','tecido do encaixe','ora')
-    +card(totFre,'frentes sobrando','red')
-    +card(feitos+'/'+total,'grupos cortados','grn')
+    card(nPend,'pendentes','ora')
+    +card(nCort,'cortados','grn')
+    +card(nFalt,'cortes que faltaram','red')
+    +card(nCost,'enviados p/ costura','teal')
+    +card(totFol,'folhas no total','')
+    +card(nm2(totMet)+' m','tecido do encaixe','')
     +'<div class="scard grn"><div class="v">'+pct+'%</div><div class="l">progresso do corte</div><div class="prog-wrap"><div class="prog-bar" style="width:'+pct+'%"></div></div></div>';
   return {metros:totMet,pecas:totPc};
 }
