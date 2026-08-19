@@ -159,6 +159,7 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
   <span class="lb">Largura do tecido:</span>
   <button class="wbtn on" id="w094" onclick="setW('0.94',this)">0,94 m — tecido em uso</button>
   <button class="wbtn" id="w122" onclick="setW('1.22',this)">1,22 m — amostra DanCERA</button>
+  <button class="wbtn on" id="alt-btn" onclick="toggleAlternado()">Encaixe alternado: LIGADO</button>
   <span class="hint">Trocar a largura recalcula encaixe, consumo e lista de compras.</span>
 </div>
 
@@ -276,6 +277,7 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
 
 <div id="lotes" class="section">
   <h2>Corte por Lote</h2>
+  <div class="banner"><b>Encaixe alternado:</b> em vez de riscar sempre a costas na dobra e sobrar uma frente, alterna-se — <b>encaixe A</b> (frente aberta, costas na dobra) e <b>encaixe B</b> (frente na dobra, costas aberta). Duas folhas passam a render <b>3 corpos em vez de 2</b>. As mangas que faltam saem de uma <b>faixa só de mangas</b>, que rende 3 a 5 pares em menos de meio metro. Cada linha abaixo diz quantas folhas de cada tipo.</div>
   <div class="banner"><b>Regra que manda neste plano:</b> corpo, mangas e tira de uma peça têm que sair do <b>mesmo lote</b>, e um tamanho inteiro nunca é dividido entre dois lotes — senão a mesma grade sai com tons diferentes. Por isso o corte é planejado lote a lote, e cada lote leva as suas próprias faixas de tira.</div>
   <div class="sgrid" id="lote-cards"></div>
   <div id="lote-body"></div>
@@ -354,7 +356,41 @@ function estoqueCor(ck,larg){
           metros:areaDisp/larg,metrosRef:areaDisp/PV_LARG_REF};
 }
 
+
+/* ---------- ENCAIXE ALTERNADO ----------
+   Encaixe A: frente aberta (2 frentes) + costas na dobra (1 costas) + 1 manga (2 mangas)
+   Encaixe B: frente na dobra (1 frente) + costas aberta (2 costas) + 1 manga (2 mangas)
+   Como frente e costas tem a mesma largura e altura, B tem o mesmo comprimento de A —
+   so troca qual das duas vai na dobra. Alternando, 2 folhas rendem 3 corpos em vez de 2,
+   e as mangas que faltam saem de uma faixa so de mangas, que e barata. */
+var ALTERNADO=true;
+function custoAlternado(pk,tam,q,r,larg){
+  if(!r||r.un!==1||!r.fr)return null;          /* so vale onde hoje sobra frente */
+  var fm=faixaMangas(pk,tam,larg);
+  if(!fm)return null;                           /* sem medida de molde, nao da */
+  var folhas=Math.ceil(2*q/3);
+  var lo=q-folhas, hi=2*folhas-q;
+  var a=Math.round(folhas/2);
+  if(a<lo)a=lo; if(a>hi)a=hi;
+  var b=folhas-a;
+  var paresFalta=Math.max(0,q-folhas);
+  var faixas=paresFalta?Math.ceil(paresFalta/fm.paresPorFaixa):0;
+  var metros=folhas*r.len+faixas*fm.altura;
+  return {folhas:folhas,a:a,b:b,paresFalta:paresFalta,faixas:faixas,
+          alturaFaixa:fm.altura,paresPorFaixa:fm.paresPorFaixa,
+          metros:metros,metrosCorpo:folhas*r.len,metrosManga:faixas*fm.altura,
+          sobraFrente:(2*a+b)-q,sobraCostas:(a+2*b)-q};
+}
+function toggleAlternado(){
+  ALTERNADO=!ALTERNADO;
+  var el=document.getElementById('alt-btn');
+  if(el){el.className='wbtn'+(ALTERNADO?' on':'');
+    el.textContent=ALTERNADO?'Encaixe alternado: LIGADO':'Encaixe alternado: desligado';}
+  render();
+}
+
 /* grupos = um tamanho inteiro de uma peca numa cor; nunca se divide */
+function larguraAtual(){return parseFloat(LARG);}
 function gruposDaCor(ck){
   var g=[];
   for(var i=0;i<PECAS.length;i++){
@@ -364,9 +400,11 @@ function gruposDaCor(ck){
       if(!q)continue;
       var r=rend(PECAS[i].k,SIZES[s]);
       if(!r)continue;
+      var alt=ALTERNADO?custoAlternado(PECAS[i].k,SIZES[s],q,r,larguraAtual()):null;
       g.push({pk:PECAS[i].k,nome:PECAS[i].n,cls:PECAS[i].cls,tam:SIZES[s],qtd:q,
-              folhas:Math.ceil(q/r.un),metros:Math.ceil(q/r.un)*r.len,
-              tira:usaTira(PECAS[i].k)});
+              folhas:alt?alt.folhas:Math.ceil(q/r.un),
+              metros:alt?alt.metros:Math.ceil(q/r.un)*r.len,
+              alt:alt,tira:usaTira(PECAS[i].k)});
     }
   }
   return g;
@@ -433,17 +471,22 @@ function planoLotes(larg){
 }
 /* Medidas dos moldes, em metros (largura x altura), medidas pela Karol em 19/08/2026.
    Baby look: frente e costas tem a mesma largura e altura.
-   Camiseta: ainda nao medida.
-   ATENCAO: baby look G (0,57) saiu mais largo que GG (0,56) — a conferir. */
+   Camiseta: idem (a ficha da um CORPO so para frente e costas).
+   Baby look G e GG tem a mesma largura (0,57), confirmado pela Karol. */
 var MOLDES={
   bab:{
     PP:{corpo:[0.475,0.66], manga:[0.18,0.35]},
     P :{corpo:[0.495,0.69], manga:[0.19,0.365]},
     M :{corpo:[0.51,0.70],  manga:[0.20,0.385]},
     G :{corpo:[0.57,0.72],  manga:[0.215,0.39]},
-    GG:{corpo:[0.56,0.75],  manga:[0.225,0.42]}
+    GG:{corpo:[0.57,0.75],  manga:[0.225,0.42]}
   },
-  cam:{}
+  cam:{
+    P :{corpo:[0.515,0.70], manga:[0.17,0.43]},
+    M :{corpo:[0.525,0.71], manga:[0.17,0.43]},
+    G :{corpo:[0.56,0.73],  manga:[0.18,0.456]},
+    GG:{corpo:[0.58,0.75],  manga:[0.19,0.47]}
+  }
 };
 /* faixa so de mangas: quantos pares saem por faixa e quanto ela come */
 function faixaMangas(pk,tam,larg){
@@ -1207,9 +1250,16 @@ function renderLotes(){
     var linhas='';
     for(var g=0;g<b.grupos.length;g++){
       var gr=b.grupos[g];
+      var det='';
+      if(gr.alt){
+        det=' <span style="font-size:10.5px;color:#7B1FA2">'
+          +gr.alt.a+'× encaixe A + '+gr.alt.b+'× encaixe B'
+          +(gr.alt.faixas?' · '+gr.alt.faixas+' faixa de manga ('+gr.alt.paresFalta+' pares)':'')
+          +'</span>';
+      }
       linhas+='<div class="enc-row">'
         +'<div class="c-chk"></div>'
-        +'<div class="e-nm"><span class="badge '+gr.cls+'">'+gr.nome+'</span> <b>'+gr.tam+'</b></div>'
+        +'<div class="e-nm"><span class="badge '+gr.cls+'">'+gr.nome+'</span> <b>'+gr.tam+'</b>'+det+'</div>'
         +'<div class="c-num">'+gr.qtd+' pç</div>'
         +'<div class="c-num">'+gr.folhas+' folhas</div>'
         +'<div class="c-num hi">'+nm2(gr.metros)+' m</div></div>';
@@ -1243,8 +1293,10 @@ function renderLotes(){
     var ll='';
     for(var g2=0;g2<so.grupos.length;g2++){
       var gg=so.grupos[g2];
+      var det2=gg.alt?' <span style="font-size:10.5px;color:#7B1FA2">'+gg.alt.a+'× A + '+gg.alt.b+'× B'
+        +(gg.alt.faixas?' · '+gg.alt.faixas+' faixa de manga':'')+'</span>':'';
       ll+='<div class="enc-row"><div class="c-chk"></div>'
-        +'<div class="e-nm"><span class="badge '+gg.cls+'">'+gg.nome+'</span> <b>'+gg.tam+'</b></div>'
+        +'<div class="e-nm"><span class="badge '+gg.cls+'">'+gg.nome+'</span> <b>'+gg.tam+'</b>'+det2+'</div>'
         +'<div class="c-num">'+gg.qtd+' pç</div><div class="c-num">'+gg.folhas+' folhas</div>'
         +'<div class="c-num hi">'+nm2(gg.metros)+' m</div></div>';
     }
