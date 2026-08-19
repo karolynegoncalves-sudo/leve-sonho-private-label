@@ -292,7 +292,7 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
   <h3>Malha PV já comprada pela DanCERA</h3>
   <div class="tbl-wrap">
     <table>
-      <thead><tr><th>Cor</th><th class="r">Comprado</th><th class="r">Rende</th><th class="r">Já cortado</th><th class="r">Disponível</th></tr></thead>
+      <thead><tr><th>Lote</th><th class="r">Comprado</th><th class="r">Rende</th><th class="r">Já cortado</th><th class="r">Disponível</th></tr></thead>
       <tbody id="est-body"></tbody>
       <tfoot id="est-foot"></tfoot>
     </table>
@@ -302,12 +302,12 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
   <h3>Confronto com o pedido</h3>
   <div class="tbl-wrap">
     <table>
-      <thead><tr><th>Tecido / cor</th><th class="r">Peças</th><th class="r">Necessário</th><th class="r">Disponível</th><th class="r">Falta</th><th class="r">+10%</th><th class="r">Comprar</th></tr></thead>
+      <thead><tr><th>Tecido / cor</th><th class="r">Peças do pedido</th><th class="r">Cortadas dos lotes</th><th class="r">Tecido usado</th><th class="r">Falta cortar</th><th class="r">Comprar (+10%)</th><th class="r">Em quilo</th></tr></thead>
       <tbody id="cmp-body"></tbody>
       <tfoot id="cmp-foot"></tfoot>
     </table>
   </div>
-  <p class="note"><b>Necessário</b> = soma real do infesto (folhas cheias), não a soma peça a peça — é assim que o tecido sai do rolo, e já inclui a tira de gola. A margem de 10% incide só sobre o que falta comprar, cobrindo ponta de rolo, defeito e ajuste de encaixe; se o fornecedor vender por quilo fechado, arredonde o kg para cima. Moletom não entra aqui: é outro tecido, não malha PV.</p>
+  <p class="note">Esta tabela sai do <b>mesmo cálculo</b> da aba Corte por Lote — o que aparece aqui como "falta cortar" é exatamente o que lá aparece como compra. <b>Cortadas dos lotes</b> já considera o encaixe alternado e a regra de não dividir tamanho entre lotes. Antes: soma do infesto (folhas cheias), não a soma peça a peça — é assim que o tecido sai do rolo, e já inclui a tira de gola. A margem de 10% incide só sobre o que falta comprar, cobrindo ponta de rolo, defeito e ajuste de encaixe; se o fornecedor vender por quilo fechado, arredonde o kg para cima. Moletom não entra aqui: é outro tecido, não malha PV.</p>
 </div>
 
 <script>
@@ -1379,65 +1379,70 @@ function renderLotes(){
 
 /* ---------- COMPRAS ---------- */
 function renderCompras(){
-  var tb=document.getElementById('cmp-body'),html='',larg=parseFloat(LARG);
-  var tPc=0,tMet=0,tDisp=0,tFalta=0,tCom=0,tKg=0;
+  var larg=parseFloat(LARG), r=planoLotes(larg);
 
-  /* estoque de malha PV comprada */
+  /* estoque, lote a lote */
   var eh='',ekg=0,edisp=0,eusado=0;
-  for(var c0=0;c0<COLORS.length;c0++){
-    var e=estoqueCor(COLORS[c0].k,larg);
-    if(!e)continue;
-    ekg+=e.kg;edisp+=e.metros;eusado+=e.usado_m;
-    eh+='<tr><td><span class="dot" style="background:'+COLORS[c0].dot+'"></span>Malha PV '+COLORS[c0].n+'</td>'
-      +'<td class="r">'+nm1(e.kg)+' kg</td>'
-      +'<td class="r">'+nm2(e.kg*PV_AREA_KG/larg)+' m</td>'
-      +'<td class="r">'+(e.usado_m?'−'+nm2(e.usado_m)+' m':'—')+'</td>'
-      +'<td class="r"><b>'+nm2(e.metros)+' m</b></td></tr>';
+  for(var i=0;i<LOTES.length;i++){
+    var l=LOTES[i], m=metrosLote(l,larg), cor=null;
+    for(var c=0;c<COLORS.length;c++)if(COLORS[c].k===l.cor)cor=COLORS[c];
+    ekg+=l.kg; edisp+=m; eusado+=l.usado_m;
+    eh+='<tr><td><span class="dot" style="background:'+(cor?cor.dot:'#999')+'"></span>Lote '+l.id
+      +'<br><span style="font-size:10.5px;color:#777">'+l.nota+'</span></td>'
+      +'<td class="r">'+nm1(l.kg)+' kg</td>'
+      +'<td class="r">'+nm2(l.kg*PV_AREA_KG/larg)+' m</td>'
+      +'<td class="r">'+(l.usado_m?'&minus;'+nm2(l.usado_m)+' m':'&mdash;')+'</td>'
+      +'<td class="r"><b>'+nm2(m)+' m</b></td></tr>';
   }
   document.getElementById('est-body').innerHTML=eh;
-  document.getElementById('est-foot').innerHTML='<tr><td>TOTAL</td><td class="r">'+nm1(ekg)+' kg</td><td class="r">—</td>'
-    +'<td class="r">'+(eusado?'−'+nm2(eusado)+' m':'—')+'</td><td class="r">'+nm2(edisp)+' m</td></tr>';
+  document.getElementById('est-foot').innerHTML='<tr><td>TOTAL</td><td class="r">'+nm1(ekg)+' kg</td>'
+    +'<td class="r">&mdash;</td><td class="r">'+(eusado?'&minus;'+nm2(eusado)+' m':'&mdash;')+'</td>'
+    +'<td class="r">'+nm2(edisp)+' m</td></tr>';
 
-  for(var c=0;c<COLORS.length;c++){
-    var pc=0,met=0;
-    for(var i=0;i<PECAS.length;i++){
-      if(!ehPV(PECAS[i].k))continue;
-      for(var s=0;s<SIZES.length;s++){
-        var q=getQ(PECAS[i].k,SIZES[s],COLORS[c].k);
-        if(!q)continue;
-        var r=rend(PECAS[i].k,SIZES[s]);
-        if(!r)continue;
-        var fol=Math.ceil(q/r.un);
-        pc+=q;met+=fol*r.len;
-      }
-    }
-    if(!pc)continue;
-    var ti2=tiraInfo(qtdTiraCor(COLORS[c].k),larg);
-    met+=ti2.metros;
-    var est=estoqueCor(COLORS[c].k,larg),disp=est?est.metros:0;
-    var falta=Math.max(0,met-disp),sobra=Math.max(0,disp-met);
-    var perda=falta*PERDA,comprar=falta+perda;
-    var kg=comprar*larg/PV_AREA_KG;
-    tPc+=pc;tMet+=met;tDisp+=disp;tFalta+=falta;tCom+=comprar;tKg+=kg;
-    html+='<tr'+(falta>0?' style="background:#fff5f5"':'')+'><td><span class="dot" style="background:'+COLORS[c].dot+'"></span>Malha PV '+COLORS[c].n
-      +(ti2.metros?'<br><span style="font-size:10.5px;color:#777">inclui '+nm2(ti2.metros)+' m de tira de gola</span>':'')+'</td>'
-      +'<td class="r">'+pc+'</td><td class="r">'+nm2(met)+' m</td>'
-      +'<td class="r">'+nm2(disp)+' m</td>'
-      +'<td class="r">'+(falta>0?'<span class="falta-sim">'+nm2(falta)+' m</span>':'<span class="falta-nao">sobra '+nm2(sobra)+' m</span>')+'</td>'
-      +'<td class="r">'+(falta>0?nm2(perda)+' m':'—')+'</td>'
-      +'<td class="r">'+(falta>0?'<b>'+nm2(comprar)+' m</b><br><span style="font-size:10.5px;color:#777">≈ '+nm1(kg)+' kg</span>':'<b>—</b>')+'</td></tr>';
+  /* confronto por cor, vindo do mesmo plano da aba Corte por Lote */
+  var porCor={};
+  for(var c2=0;c2<COLORS.length;c2++)porCor[COLORS[c2].k]={cor:COLORS[c2],pedido:0,cortadas:0,usado:0,disp:0,falta:0,faltaM:0};
+  for(var g=0;g<r.plano.length;g++){
+    var b=r.plano[g], e=porCor[b.lote.cor];
+    e.cortadas+=b.custo.pecas; e.usado+=b.custo.metros; e.disp+=b.disp;
   }
-  tb.innerHTML=html||'<tr><td colspan="7" style="text-align:center;color:#999;padding:22px">Sem quantidades lançadas — preencha a aba <b>Pedido</b>.</td></tr>';
-  document.getElementById('cmp-foot').innerHTML=html?'<tr><td>TOTAL</td><td class="r">'+tPc+'</td><td class="r">'+nm2(tMet)+' m</td>'
-    +'<td class="r">'+nm2(tDisp)+' m</td><td class="r">'+nm2(tFalta)+' m</td><td class="r">'+nm2(tCom-tFalta)+' m</td>'
-    +'<td class="r">'+(tCom?nm2(tCom)+' m · ≈ '+nm1(tKg)+' kg':'—')+'</td></tr>':'';
-  document.getElementById('cmp-cards').innerHTML=
-    card(nm2(tMet)+' m','necessário para o pedido','')
-    +card(nm2(tDisp)+' m','disponível em malha PV','teal')
-    +card(nm2(tFalta)+' m',tFalta>0?'falta de tecido':'nenhuma falta',tFalta>0?'red':'grn')
-    +(tCom?card(nm2(tCom)+' m','comprar com 10%','ora')+card(nm1(tKg)+' kg','a comprar em quilo','ora'):'');
-}
+  for(var s2=0;s2<r.sobra.length;s2++){
+    var so=r.sobra[s2], e2=porCor[so.cor.k];
+    e2.falta=so.custo.pecas; e2.faltaM=so.custo.metros;
+  }
+  for(var c3=0;c3<COLORS.length;c3++){
+    var ck=COLORS[c3].k, gs=gruposDaCor(ck);
+    for(var x=0;x<gs.length;x++)porCor[ck].pedido+=gs[x].qtd;
+  }
 
+  var html='',tPed=0,tCor=0,tUso=0,tDisp=0,tFal=0,tCom=0,tKg=0;
+  for(var c4=0;c4<COLORS.length;c4++){
+    var e3=porCor[COLORS[c4].k];
+    if(!e3.pedido)continue;
+    var comprar=e3.faltaM?e3.faltaM*(1+PERDA):0, kg=comprar*larg/PV_AREA_KG;
+    tPed+=e3.pedido;tCor+=e3.cortadas;tUso+=e3.usado;tDisp+=e3.disp;tFal+=e3.falta;tCom+=comprar;tKg+=kg;
+    html+='<tr'+(e3.falta?' style="background:#fff5f5"':'')+'>'
+      +'<td><span class="dot" style="background:'+e3.cor.dot+'"></span>Malha PV '+e3.cor.n+'</td>'
+      +'<td class="r">'+e3.pedido+'</td>'
+      +'<td class="r"><b>'+e3.cortadas+'</b></td>'
+      +'<td class="r">'+nm2(e3.usado)+' m<br><span style="font-size:10.5px;color:#777">de '+nm2(e3.disp)+' m</span></td>'
+      +'<td class="r">'+(e3.falta?'<span class="falta-sim">'+e3.falta+' pç</span>':'<span class="falta-nao">nenhuma</span>')+'</td>'
+      +'<td class="r">'+(comprar?nm2(comprar)+' m':'&mdash;')+'</td>'
+      +'<td class="r">'+(comprar?'<b>&asymp; '+nm1(kg)+' kg</b>':'<b>&mdash;</b>')+'</td></tr>';
+  }
+  document.getElementById('cmp-body').innerHTML=html||'<tr><td colspan="7" style="text-align:center;color:#999;padding:22px">Sem quantidades lançadas — preencha a aba <b>Pedido</b>.</td></tr>';
+  document.getElementById('cmp-foot').innerHTML=html?'<tr><td>TOTAL</td><td class="r">'+tPed+'</td>'
+    +'<td class="r">'+tCor+'</td><td class="r">'+nm2(tUso)+' m</td><td class="r">'+tFal+' pç</td>'
+    +'<td class="r">'+(tCom?nm2(tCom)+' m':'&mdash;')+'</td>'
+    +'<td class="r">'+(tCom?'&asymp; '+nm1(tKg)+' kg':'&mdash;')+'</td></tr>':'';
+
+  document.getElementById('cmp-cards').innerHTML=
+    card(tPed,'peças no pedido','')
+    +card(tCor,'já cortadas dos lotes','grn')
+    +card(nm2(tUso)+' m','tecido usado dos lotes','teal')
+    +(tFal?card(tFal,'peças aguardando compra','red')+card(nm1(tKg)+' kg','comprar','red')
+          :card(0,'aguardando compra','grn'));
+}
 function render(){renderPedido();renderEnc();renderRisco();renderRend();renderLotes();renderCompras();}
 
 function exportState(){
