@@ -403,7 +403,7 @@ table.tb-ficha tfoot td{background:#ececf2;font-weight:bold}
             <th>QTD</th><th>COR</th><th>TAM</th>
             <th>CORTE</th><th>VISTO<br>RETIRADA</th>
             <th>DATA<br>CORTE</th><th>DATA ENVIO<br>COSTURA</th>
-            <th>QUANTIDADE<br>TECIDO</th><th>DATA<br>COSTURA</th>
+            <th>DATA<br>COSTURA</th>
           </tr>
         </thead>
         <tbody id="ficha-body"></tbody>
@@ -419,7 +419,7 @@ table.tb-ficha tfoot td{background:#ececf2;font-weight:bold}
             <th>ITEM</th><th>TAM</th><th>COR</th><th>QTD</th>
             <th>CORTE A<br><span class="leve">costas dobra + frente aberta</span></th>
             <th>CORTE C<br><span class="leve">costas dobra + costas aberta</span></th>
-            <th>FAIXA DE MANGAS</th><th>TECIDO</th><th>VISTO</th>
+            <th>FAIXA DE MANGAS</th><th>VISTO</th>
           </tr>
         </thead>
         <tbody id="ficha-corte"></tbody>
@@ -430,7 +430,7 @@ table.tb-ficha tfoot td{background:#ececf2;font-weight:bold}
     <div class="tbl-wrap">
       <table class="tb-ficha">
         <thead>
-          <tr><th>ITEM</th><th>COR</th><th>QTD</th><th>FAIXAS</th><th>TECIDO</th><th>VISTO</th></tr>
+          <tr><th>ITEM</th><th>COR</th><th>QTD</th><th>FAIXAS</th><th>VISTO</th></tr>
         </thead>
         <tbody id="ficha-tiras"></tbody>
       </table>
@@ -442,7 +442,7 @@ table.tb-ficha tfoot td{background:#ececf2;font-weight:bold}
     </div>
   </div>
 
-  <p class="note">Mesmo layout do QUADRO CORTE da Ordem de Serviço do site: PEDIDO, C e PRAZO mesclados no pedido inteiro, ITEM mesclado por produto, e QTD/COR/TAM por linha. As colunas <b>CORTE</b> e <b>VISTO RETIRADA</b> saem em branco de propósito, para preencher na mesa.</p>
+  <p class="note">Mesmo layout do QUADRO CORTE da Ordem de Serviço do site: PEDIDO, C e PRAZO mesclados no pedido inteiro, ITEM mesclado por produto, e QTD/COR/TAM por linha. A metragem de tecido ficou <b>fora desta ficha</b> de propósito — ela serve para a Nat dar os OKs de corte e as datas. O consumo de tecido está nas abas <b>Corte por Lote</b> e <b>Lista de Compras</b>.</p>
 </div>
 
 <script>
@@ -1648,14 +1648,13 @@ function renderFicha(){
       + '<td class="vazio"></td>'
       + '<td class="c pre">' + FICHA.dataCorte + '</td>'
       + '<td class="c pre">' + FICHA.envioCostura + '</td>'
-      + '<td class="c">' + l.tecido + '</td>'
       + '<td class="c pre">' + FICHA.dataCostura + '</td>'
       + '</tr>';
   }
   host.innerHTML = linhas;
   var tot = document.getElementById('ficha-total');
   if (tot) tot.innerHTML = '<tr><td colspan="4">TOTAL</td><td class="c">' + totQtd + '</td>'
-    + '<td colspan="8"></td></tr>';
+    + '<td colspan="7"></td></tr>';
 
   /* plano de corte resumido, para a mesa */
   var pc = '';
@@ -1667,7 +1666,6 @@ function renderFicha(){
        + '<td class="c">' + x.alt.a + '</td>'
        + '<td class="c">' + x.alt.b + '</td>'
        + '<td class="c">' + (x.alt.faixas ? x.alt.faixas + ' faixa (' + x.alt.paresFalta + ' pares)' : '—') + '</td>'
-       + '<td class="c">' + nm2(x.alt.metros) + ' m</td>'
        + '<td class="vazio"></td></tr>';
   }
   var pcb = document.getElementById('ficha-corte');
@@ -1682,7 +1680,7 @@ function renderFicha(){
     th += '<tr><td>Tira de gola 70 × 3,5 cm</td><td>' + COLORS[t].n + '</td>'
        + '<td class="c">' + ti.tiras + ' tiras</td>'
        + '<td class="c">' + ti.faixas + ' faixa' + (ti.faixas > 1 ? 's' : '') + '</td>'
-       + '<td class="c">' + nm2(ti.metros) + ' m</td><td class="vazio"></td></tr>';
+       + '<td class="vazio"></td></tr>';
   }
   var tb = document.getElementById('ficha-tiras');
   if (tb) tb.innerHTML = th;
