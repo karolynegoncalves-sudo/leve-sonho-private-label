@@ -130,6 +130,45 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
 .enc-row.parcial{background:#fff8e1}
 .enc-filtros{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
 .enc-filtros .lb{font-size:11.5px;font-weight:bold;color:#555}
+
+/* ---- ficha de impressao ---- */
+.ficha-acao{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.ficha-acao .hint{font-size:11px;color:#888}
+.folha{background:#fff;border:1px solid #d0d0d8;border-radius:6px;padding:18px 20px}
+.folha-topo{border-bottom:2px solid #1a1a2e;padding-bottom:8px;margin-bottom:12px}
+.folha-tit{font-size:15px;font-weight:bold;letter-spacing:.5px;color:#1a1a2e}
+.folha-sub{font-size:11.5px;color:#555;margin-top:2px}
+.folha-sec{font-size:11.5px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px;
+  color:#1a1a2e;margin:16px 0 6px;padding-bottom:3px;border-bottom:1px solid #bbb}
+table.tb-ficha{border-collapse:collapse;width:100%;font-size:11px}
+table.tb-ficha th{background:#ececf2;color:#1a1a2e;border:1px solid #9a9aa8;padding:4px 5px;
+  text-align:left;font-size:9.5px;line-height:1.25;text-transform:uppercase;letter-spacing:.2px}
+table.tb-ficha th .leve{font-weight:normal;text-transform:none;letter-spacing:0;color:#666;font-size:8.5px}
+table.tb-ficha td{border:1px solid #9a9aa8;padding:4px 5px;vertical-align:middle}
+table.tb-ficha td.c{text-align:center}
+table.tb-ficha td.v{vertical-align:middle;text-align:center;font-weight:bold;background:#fafafd}
+table.tb-ficha td.item{text-align:left;font-weight:bold}
+table.tb-ficha td.cli{font-weight:normal}
+table.tb-ficha .cli{font-weight:normal;font-size:9.5px;color:#666}
+table.tb-ficha td.pre{color:#555}
+table.tb-ficha td.vazio{background:#fff;min-width:60px}
+table.tb-ficha tfoot td{background:#ececf2;font-weight:bold}
+.folha-rodape{margin-top:14px;padding-top:8px;border-top:1px solid #bbb;font-size:11px;color:#333}
+.assina{display:flex;gap:30px;margin-top:16px;font-size:11px;color:#555;flex-wrap:wrap}
+
+@media print{
+  @page{size:A4 landscape;margin:10mm}
+  body.imprimindo{background:#fff;padding:0}
+  body.imprimindo .topbar,body.imprimindo .syncbar,body.imprimindo .sync-panel,
+  body.imprimindo .wbar,body.imprimindo .banner,body.imprimindo .tabs,
+  body.imprimindo .ficha-acao,body.imprimindo .note{display:none!important}
+  body.imprimindo .section{display:none!important}
+  body.imprimindo .section#ficha{display:block!important;box-shadow:none;padding:0;border-radius:0}
+  body.imprimindo .folha{border:none;padding:0}
+  body.imprimindo .tbl-wrap{overflow:visible}
+  body.imprimindo table.tb-ficha{page-break-inside:auto}
+  body.imprimindo table.tb-ficha tr{page-break-inside:avoid}
+}
 .falta-sim{color:#c62828;font-weight:bold}
 .falta-nao{color:#2e7d32;font-weight:bold}
 .win{background:#e8f5e9!important}
@@ -198,6 +237,7 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
   <button class="tab" onclick="showTab('rend',this)">🧵 Rendimento &amp; Comparativo</button>
   <button class="tab" onclick="showTab('lotes',this)">🧩 Corte por Lote</button>
   <button class="tab" onclick="showTab('compras',this)">🛒 Lista de Compras</button>
+  <button class="tab" onclick="showTab('ficha',this)">🖨️ Ficha de Impressão</button>
 </div>
 
 <div id="pedido" class="section active">
@@ -341,6 +381,68 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
     </table>
   </div>
   <p class="note">Esta tabela sai do <b>mesmo cálculo</b> da aba Corte por Lote — o que aparece aqui como "falta cortar" é exatamente o que lá aparece como compra. <b>Cortadas dos lotes</b> já considera o encaixe alternado e a regra de não dividir tamanho entre lotes. Antes: soma do infesto (folhas cheias), não a soma peça a peça — é assim que o tecido sai do rolo, e já inclui a tira de gola. A margem de 10% incide só sobre o que falta comprar, cobrindo ponta de rolo, defeito e ajuste de encaixe; se o fornecedor vender por quilo fechado, arredonde o kg para cima. Moletom não entra aqui: é outro tecido, não malha PV.</p>
+</div>
+
+<div id="ficha" class="section">
+  <div class="ficha-acao">
+    <button class="bkbtn" onclick="imprimirFicha()">🖨️ Imprimir esta ficha</button>
+    <span class="hint">Sai em A4 deitado. Colunas em branco são para a Nat preencher à mão.</span>
+  </div>
+
+  <div class="folha">
+    <div class="folha-topo">
+      <div class="folha-tit">SETEMBRO 2026 — ORDEM DE SERVIÇO</div>
+      <div class="folha-sub">Private Label · DanCERA · PL-DAN-0004 · Leve Sonho</div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="tb-ficha">
+        <thead>
+          <tr>
+            <th>PEDIDO</th><th>C</th><th>PRAZO</th><th>ITEM</th>
+            <th>QTD</th><th>COR</th><th>TAM</th>
+            <th>CORTE</th><th>VISTO<br>RETIRADA</th>
+            <th>DATA<br>CORTE</th><th>DATA ENVIO<br>COSTURA</th>
+            <th>QUANTIDADE<br>TECIDO</th><th>DATA<br>COSTURA</th>
+          </tr>
+        </thead>
+        <tbody id="ficha-body"></tbody>
+        <tfoot id="ficha-total"></tfoot>
+      </table>
+    </div>
+
+    <div class="folha-sec">PLANO DE CORTE — a frente nunca vai na dobra</div>
+    <div class="tbl-wrap">
+      <table class="tb-ficha">
+        <thead>
+          <tr>
+            <th>ITEM</th><th>TAM</th><th>COR</th><th>QTD</th>
+            <th>CORTE A<br><span class="leve">costas dobra + frente aberta</span></th>
+            <th>CORTE C<br><span class="leve">costas dobra + costas aberta</span></th>
+            <th>FAIXA DE MANGAS</th><th>TECIDO</th><th>VISTO</th>
+          </tr>
+        </thead>
+        <tbody id="ficha-corte"></tbody>
+      </table>
+    </div>
+
+    <div class="folha-sec">TIRA DE GOLA — cortada em pé, no sentido do fio</div>
+    <div class="tbl-wrap">
+      <table class="tb-ficha">
+        <thead>
+          <tr><th>ITEM</th><th>COR</th><th>QTD</th><th>FAIXAS</th><th>TECIDO</th><th>VISTO</th></tr>
+        </thead>
+        <tbody id="ficha-tiras"></tbody>
+      </table>
+    </div>
+
+    <div class="folha-rodape">
+      <div><b>Corte:</b> 16 a 18/09 &nbsp;·&nbsp; <b>Costura e conferência:</b> 21/09 a 06/10 &nbsp;·&nbsp; <b>Entrega interna:</b> 06/10/2026</div>
+      <div class="assina"><span>Cortado por _______________________</span><span>Data ____ / ____ / ______</span></div>
+    </div>
+  </div>
+
+  <p class="note">Mesmo layout do QUADRO CORTE da Ordem de Serviço do site: PEDIDO, C e PRAZO mesclados no pedido inteiro, ITEM mesclado por produto, e QTD/COR/TAM por linha. As colunas <b>CORTE</b> e <b>VISTO RETIRADA</b> saem em branco de propósito, para preencher na mesa.</p>
 </div>
 
 <script>
@@ -1471,6 +1573,127 @@ function renderGanhoEstoque(){
 }
 
 
+/* ---------- FICHA DE IMPRESSÃO (layout QUADRO CORTE da O.S. Nuvemshop) ---------- */
+var FICHA = {
+  pedido: 'PL-DAN-0004',
+  cliente: 'DanCERA',
+  c: 'N',
+  prazo: '06/10/2026',
+  dataCorte: '18/09/2026',
+  envioCostura: '21/09/2026',
+  dataCostura: '06/10/2026'
+};
+var ITEM_NOME = {
+  cam: 'Camiseta - Malha PV',
+  bab: 'Baby Look - Malha PV',
+  reg: 'Regata - Malha PV',
+  mol: 'Moletom Careca - PA 2 cabos'
+};
+
+function fichaLinhas(){
+  var larg = parseFloat(LARG), linhas = [];
+  for (var i = 0; i < PECAS.length; i++) {
+    var pk = PECAS[i].k;
+    for (var c = 0; c < COLORS.length; c++) {
+      var ck = COLORS[c].k;
+      for (var s = 0; s < SIZES.length; s++) {
+        var tam = SIZES[s], q = getQ(pk, tam, ck);
+        if (!q) continue;
+        var r = rend(pk, tam), alt = null, tec = '';
+        if (r) {
+          alt = ALTERNADO ? custoAlternado(pk, tam, q, r, larg) : null;
+          tec = nm2(alt ? alt.metros : Math.ceil(q / r.un) * r.len) + ' m';
+        } else if (pk === 'mol') {
+          tec = nm1(q / MOLETOM.pecasPorKg) + ' kg';
+        } else {
+          tec = '—';
+        }
+        linhas.push({ item: ITEM_NOME[pk] || pk, pk: pk, qtd: q,
+                      cor: COLORS[c].n, tam: tam, tecido: tec, alt: alt });
+      }
+    }
+  }
+  return linhas;
+}
+
+function renderFicha(){
+  var host = document.getElementById('ficha-body');
+  if (!host) return;
+  var L = fichaLinhas();
+  if (!L.length) { host.innerHTML = '<div class="empty">Sem quantidades lançadas.</div>'; return; }
+
+  /* quantas linhas cada ITEM ocupa, para mesclar verticalmente */
+  var spanItem = {}, vistos = {};
+  for (var i = 0; i < L.length; i++) spanItem[L[i].item] = (spanItem[L[i].item] || 0) + 1;
+
+  var linhas = '', totQtd = 0;
+  for (var j = 0; j < L.length; j++) {
+    var l = L[j];
+    totQtd += l.qtd;
+    var tds = '';
+    if (j === 0) {
+      tds += '<td rowspan="' + L.length + '" class="v">' + FICHA.pedido + '<br><span class="cli">' + FICHA.cliente + '</span></td>'
+           + '<td rowspan="' + L.length + '" class="v">' + FICHA.c + '</td>'
+           + '<td rowspan="' + L.length + '" class="v">' + FICHA.prazo + '</td>';
+    }
+    if (!vistos[l.item]) {
+      vistos[l.item] = 1;
+      tds += '<td rowspan="' + spanItem[l.item] + '" class="v item">' + l.item + '</td>';
+    }
+    linhas += '<tr>' + tds
+      + '<td class="c">' + l.qtd + '</td>'
+      + '<td>' + l.cor + '</td>'
+      + '<td class="c"><b>' + l.tam + '</b></td>'
+      + '<td class="vazio"></td>'
+      + '<td class="vazio"></td>'
+      + '<td class="c pre">' + FICHA.dataCorte + '</td>'
+      + '<td class="c pre">' + FICHA.envioCostura + '</td>'
+      + '<td class="c">' + l.tecido + '</td>'
+      + '<td class="c pre">' + FICHA.dataCostura + '</td>'
+      + '</tr>';
+  }
+  host.innerHTML = linhas;
+  var tot = document.getElementById('ficha-total');
+  if (tot) tot.innerHTML = '<tr><td colspan="4">TOTAL</td><td class="c">' + totQtd + '</td>'
+    + '<td colspan="8"></td></tr>';
+
+  /* plano de corte resumido, para a mesa */
+  var pc = '';
+  for (var k = 0; k < L.length; k++) {
+    var x = L[k];
+    if (!x.alt) continue;
+    pc += '<tr><td>' + x.item + '</td><td class="c"><b>' + x.tam + '</b></td><td>' + x.cor + '</td>'
+       + '<td class="c">' + x.qtd + '</td>'
+       + '<td class="c">' + x.alt.a + '</td>'
+       + '<td class="c">' + x.alt.b + '</td>'
+       + '<td class="c">' + (x.alt.faixas ? x.alt.faixas + ' faixa (' + x.alt.paresFalta + ' pares)' : '—') + '</td>'
+       + '<td class="c">' + nm2(x.alt.metros) + ' m</td>'
+       + '<td class="vazio"></td></tr>';
+  }
+  var pcb = document.getElementById('ficha-corte');
+  if (pcb) pcb.innerHTML = pc;
+
+  /* tiras por cor */
+  var th = '';
+  for (var t = 0; t < COLORS.length; t++) {
+    var qct = qtdTiraCor(COLORS[t].k);
+    if (!qct) continue;
+    var ti = tiraInfo(qct, parseFloat(LARG));
+    th += '<tr><td>Tira de gola 70 × 3,5 cm</td><td>' + COLORS[t].n + '</td>'
+       + '<td class="c">' + ti.tiras + ' tiras</td>'
+       + '<td class="c">' + ti.faixas + ' faixa' + (ti.faixas > 1 ? 's' : '') + '</td>'
+       + '<td class="c">' + nm2(ti.metros) + ' m</td><td class="vazio"></td></tr>';
+  }
+  var tb = document.getElementById('ficha-tiras');
+  if (tb) tb.innerHTML = th;
+}
+
+function imprimirFicha(){
+  document.body.classList.add('imprimindo');
+  window.print();
+  setTimeout(function(){ document.body.classList.remove('imprimindo'); }, 500);
+}
+
 /* ---------- CORTE POR LOTE ---------- */
 function renderLotes(){
   var host=document.getElementById('lote-body');
@@ -1637,7 +1860,7 @@ function renderCompras(){
     +(tFal?card(tFal,'peças aguardando compra','red')+card(nm1(tKg)+' kg','comprar','red')
           :card(0,'aguardando compra','grn'));
 }
-function render(){renderPedido();renderEnc();renderRisco();renderRend();renderLotes();renderCompras();}
+function render(){renderPedido();renderEnc();renderRisco();renderRend();renderLotes();renderCompras();renderFicha();}
 
 function exportState(){
   var txt=JSON.stringify({v:1,largura:LARG,qtd:st.qtd,cortado:st.cortado},null,2);
