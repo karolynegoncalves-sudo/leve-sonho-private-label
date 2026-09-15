@@ -183,7 +183,8 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
   <b>O número apresentado é o custo com desperdício.</b> Os dois tecidos são <b>tubulares</b> — a largura é medida com o tubo achatado e o corte pega duas camadas, então cada contorno sai como duas peças. No tecido de 0,94 m cada folha rende <b>1 peça inteira + 1 frente que sobra</b>. Essa frente está paga dentro do preço — é assim que a peça avulsa custa de verdade. Para aproveitar a sobra é preciso alinhar as quantidades e encaixar em par, como já é feito no moletom (1,82 m rendendo 2 unidades). A coluna <b>frentes sobrando</b> mostra quanto tecido está indo embora hoje.
 </div>
 <div class="banner warn2">
-  <b>⚠️ Estoque de malha ainda não informado.</b> Este é o pedido novo (PL-DAN-0004) e os lotes do pedido anterior foram consumidos. Enquanto o saldo não for lançado, as abas <b>Corte por Lote</b> e <b>Lista de Compras</b> tratam tudo como compra — nenhum corte está liberado. A sobra teórica do pedido anterior era de <b>~5,47 m</b> (5,38 m no lote Preto 2), mas é conta, não pesagem.
+  <b>Estoque parcialmente confirmado.</b> O lote <b>Preto 2 (5 kg) não foi usado</b> no pedido anterior e está inteiro. Sobrou também branco e preto do lote 1, mas <b>ainda sem pesagem</b> — esses entram como zero, então o plano abaixo é conservador e pede mais compra do que o necessário. Assim que pesarem, é só lançar.<br>
+  <b>Moletom:</b> 2,5 kg de cada cor em casa, e cada quilo rende 2 moletons gola careca — dá exatamente as 5 peças de cada cor do pedido.
 </div>
 <div class="banner warn2">
   <b>Tecidos:</b> camiseta, baby look e regata são <b>malha PV</b>. O <b>moletom é PA 2 cabos</b>, outro tecido — fica fora da conta de malha PV e será alimentado depois.<br>
@@ -300,7 +301,7 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
 
 <div id="lotes" class="section">
   <h2>Corte por Lote</h2>
-  <div class="banner"><b>Encaixe alternado:</b> em vez de riscar sempre a costas na dobra e sobrar uma frente, alterna-se — <b>encaixe A</b> (frente aberta, costas na dobra) e <b>encaixe B</b> (frente na dobra, costas aberta). Duas folhas passam a render <b>3 corpos em vez de 2</b>. As mangas que faltam saem de uma <b>faixa só de mangas</b>, que rende 3 a 5 pares em menos de meio metro. Cada linha abaixo diz quantas folhas de cada tipo. <b>Encaixe B e faixa de mangas conferidos na mesa em 19/08/2026.</b></div>
+  <div class="banner"><b>Encaixe alternado:</b> a <b>frente nunca vai na dobra</b> — a dobra deixa um vinco que não sai. Então combina-se <b>encaixe A</b> (costas na dobra + frente aberta) com <b>encaixe C</b> (costas na dobra + costas aberta, só costas). Os corpos caem de uma folha por peça para <b>duas folhas a cada três peças</b>. As mangas que faltam saem de uma <b>faixa só de mangas</b>, que rende 3 a 5 pares em menos de meio metro. Cada linha abaixo diz quantas folhas de cada tipo. <b>Encaixe B e faixa de mangas conferidos na mesa em 19/08/2026.</b></div>
   <div class="banner"><b>Regra que manda neste plano:</b> corpo, mangas e tira de uma peça têm que sair do <b>mesmo lote</b>, e um tamanho inteiro nunca é dividido entre dois lotes — senão a mesma grade sai com tons diferentes. Por isso o corte é planejado lote a lote, e cada lote leva as suas próprias faixas de tira.</div>
   <div class="sgrid" id="lote-cards"></div>
   <div id="lote-body"></div>
@@ -321,6 +322,15 @@ input.qtd.has{border-color:#7B1FA2;background:#faf5fd;font-weight:bold}
     </table>
   </div>
   <p class="note">A malha PV é vendida por quilo: <b>1 kg rende 2,5 m lineares no tubular de 0,94 m</b> (largura medida na mesa, tubo achatado). O peso define a área de tecido (2,35 m² na mesa por kg), não o comprimento — por isso, ao trocar a largura no topo da página, os metros disponíveis se ajustam sozinhos: o mesmo quilo dá menos metros num tecido mais largo, e a mesma área. Os 0,83 m já cortados da branca estão descontados.</p>
+
+  <h3>Moletom — PA 2 cabos</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Cor</th><th class="r">Em casa</th><th class="r">Rende</th><th class="r">Pedido</th><th class="r">Falta</th></tr></thead>
+      <tbody id="mol-body"></tbody>
+    </table>
+  </div>
+  <p class="note">O moletom é comprado por quilo e o rendimento é contado em <b>peças por quilo</b> (1 kg = 2 moletons gola careca), não em metros — a modelagem ainda não foi medida na mesa. Por isso ele fica fora do cálculo de encaixe da malha PV.</p>
 
   <h3>Confronto com o pedido</h3>
   <div class="tbl-wrap">
@@ -355,11 +365,32 @@ var PV_AREA_KG=PV_M_POR_KG_094*PV_LARG_REF;           /* 2,35 m² por kg */
    e um tamanho inteiro nao pode ser dividido entre lotes — senao a mesma
    grade sai com tons diferentes. Por isso o corte e planejado lote a lote. */
 var LOTES=[
- /* PEDIDO NOVO (PL-DAN-0004): o estoque ainda nao foi informado.
-    Sobra teorica do pedido anterior: Preto 1 = 0,04 m · Preto 2 = 5,38 m · Branco 1 = 0,05 m
-    (~5,47 m no total), mas isso e calculo, nao pesagem. Assim que a Karol confirmar
-    o que sobrou e o que foi comprado, e so preencher aqui. */
+ /* Confirmado pela Karol em 15/09/2026: o lote Preto 2 (5 kg) nao foi usado no
+    PL-DAN-0003. Sobrou tambem branco e preto do lote 1, mas ainda sem pesagem —
+    por isso entram como 0 aqui, o que deixa o plano conservador (pede mais compra
+    do que o necessario). Assim que pesar, e so trocar o kg. */
+ {id:'Preto 2',  cor:'preto',  kg:5, usado_m:0, nota:'intacto, nao usado no pedido anterior'},
+ {id:'Preto 1 (resto)',  cor:'preto',  kg:0, usado_m:0, nota:'sobra do PL-DAN-0003 — A PESAR'},
+ {id:'Branco 1 (resto)', cor:'branco', kg:0, usado_m:0, nota:'sobra do PL-DAN-0003 — A PESAR'}
 ];
+
+/* Moletom gola careca: comprado por quilo, e o rendimento e contado em PECAS por kg,
+   nao em metros — modelagem ainda nao medida na mesa. */
+var MOLETOM={pecasPorKg:2, estoque:{branco:2.5, preto:2.5}};
+function moletomPlano(){
+  var out=[];
+  for(var c=0;c<COLORS.length;c++){
+    var ck=COLORS[c].k, kg=MOLETOM.estoque[ck]||0;
+    var pedido=0;
+    for(var s=0;s<SIZES.length;s++)pedido+=getQ('mol',SIZES[s],ck);
+    if(!pedido&&!kg)continue;
+    var rende=kg*MOLETOM.pecasPorKg;
+    out.push({cor:COLORS[c],kg:kg,rende:rende,pedido:pedido,
+              falta:Math.max(0,pedido-rende),
+              faltaKg:Math.max(0,pedido-rende)/MOLETOM.pecasPorKg});
+  }
+  return out;
+}
 function lotesDaCor(ck){
   var r=[];
   for(var i=0;i<LOTES.length;i++)if(LOTES[i].cor===ck)r.push(LOTES[i]);
@@ -381,29 +412,34 @@ function estoqueCor(ck,larg){
 }
 
 
-/* ---------- ENCAIXE ALTERNADO ----------
-   Encaixe A: frente aberta (2 frentes) + costas na dobra (1 costas) + 1 manga (2 mangas)
-   Encaixe B: frente na dobra (1 frente) + costas aberta (2 costas) + 1 manga (2 mangas)
-   Como frente e costas tem a mesma largura e altura, B tem o mesmo comprimento de A —
-   so troca qual das duas vai na dobra. Alternando, 2 folhas rendem 3 corpos em vez de 2,
-   e as mangas que faltam saem de uma faixa so de mangas, que e barata. */
+/* ---------- ENCAIXE ALTERNADO (sem dobrar a frente) ----------
+   REGRA DE QUALIDADE: a FRENTE nunca vai na dobra — a dobra deixa um vinco
+   no meio da peca que nao sai. So a costas pode ir na dobra.
+
+   Encaixe A: costas na dobra (1 costas) + frente aberta (2 frentes) + 1 manga (2 mangas)
+   Encaixe C: costas na dobra (1 costas) + costas aberta (2 costas) + 1 manga (2 mangas)
+
+   Combinando A e C os corpos caem de Q folhas para ~2Q/3, igual ao esquema antigo,
+   sem nunca dobrar a frente. As mangas que faltam saem da faixa so de mangas. */
 var ALTERNADO=true;
 function custoAlternado(pk,tam,q,r,larg){
-  if(!r||r.un!==1||!r.fr)return null;          /* so vale onde hoje sobra frente */
+  if(!r||r.un!==1||!r.fr)return null;
   var fm=faixaMangas(pk,tam,larg);
-  if(!fm)return null;                           /* sem medida de molde, nao da */
-  var folhas=Math.ceil(2*q/3);
-  var lo=q-folhas, hi=2*folhas-q;
-  var a=Math.round(folhas/2);
-  if(a<lo)a=lo; if(a>hi)a=hi;
-  var b=folhas-a;
+  if(!fm)return null;
+  var melhor=null;
+  for(var a=Math.ceil(q/2);a<=q;a++){
+    var c=Math.max(0,Math.ceil((q-a)/3));
+    var tot=a+c;
+    if(!melhor||tot<melhor.folhas)melhor={folhas:tot,a:a,c:c};
+  }
+  var a2=melhor.a, c2=melhor.c, folhas=melhor.folhas;
   var paresFalta=Math.max(0,q-folhas);
   var faixas=paresFalta?Math.ceil(paresFalta/fm.paresPorFaixa):0;
   var metros=folhas*r.len+faixas*fm.altura;
-  return {folhas:folhas,a:a,b:b,paresFalta:paresFalta,faixas:faixas,
+  return {folhas:folhas,a:a2,b:c2,paresFalta:paresFalta,faixas:faixas,
           alturaFaixa:fm.altura,paresPorFaixa:fm.paresPorFaixa,
           metros:metros,metrosCorpo:folhas*r.len,metrosManga:faixas*fm.altura,
-          sobraFrente:(2*a+b)-q,sobraCostas:(a+2*b)-q};
+          sobraFrente:2*a2-q,sobraCostas:a2+3*c2-q};
 }
 function toggleAlternado(){
   ALTERNADO=!ALTERNADO;
@@ -977,7 +1013,7 @@ function renderEnc(){
           rows+=encLinha({chave:base+'|A',rotulo:'Corte A · '+tam,sub:'frente aberta · costas na dobra',
             pedido:q+' pç',folhas:alt.a,infestos:infA,
             sobra:(alt.sobraFrente?alt.sobraFrente+' frente'+(alt.sobraFrente>1?'s':''):'—'),metros:alt.a*r.len});
-          rows+=encLinha({chave:base+'|B',rotulo:'Corte B · '+tam,sub:'frente na dobra · costas aberta',
+          rows+=encLinha({chave:base+'|B',rotulo:'Corte C · '+tam,sub:'costas na dobra + costas aberta (só costas)',
             pedido:'—',folhas:alt.b,infestos:infB,
             sobra:(alt.sobraCostas?alt.sobraCostas+' costas':'—'),metros:alt.b*r.len});
           if(alt.faixas){
@@ -1179,9 +1215,11 @@ function riscoFicha(pk,tam,larg){
    o desenho e o mesmo — o que muda e qual delas vai na dobra. Basta trocar os
    dois nomes; as anotacoes "na dobra / sai 1" e "aberta / sai 2" ficam onde estao. */
 function riscoFichaB(pk,tam,larg){
+  /* Encaixe C: as duas pecas do risco sao COSTAS — uma na dobra, uma aberta.
+     A frente nunca vai na dobra (vinco), entao o risco espelhado do B nao existe mais. */
   var a=riscoFicha(pk,tam,larg);
   if(!a)return null;
-  return a.replace(/>COSTAS</g,'><').replace(/>FRENTE</g,'>COSTAS<').replace(/></g,'>FRENTE<');
+  return a.replace(/>FRENTE</g,'>COSTAS<');
 }
 
 function riscoTracado(pk,tam,r,larg){
@@ -1377,12 +1415,12 @@ function renderRisco(){
         +'</div>';
       if(temFicha){
         html+='<div class="risco-card" style="border-color:#7B1FA2">'
-          +'<div class="risco-hdr" style="background:#7B1FA2"><span>'+PECAS[i].n+' '+tam+' · encaixe B</span>'
+          +'<div class="risco-hdr" style="background:#7B1FA2"><span>'+PECAS[i].n+' '+tam+' · encaixe C</span>'
           +'<span class="med">'+nm2(r.len)+' × '+nm2(larg)+' m</span></div>'
           +'<div class="risco-svg">'+riscoFichaB(pk,tam,larg)+'</div>'
-          +'<div class="risco-pe">Mesmo desenho do A, com a <b>dobra trocando de peça</b>: aqui a <b>frente</b> vai na dobra e sai 1, a <b>costas</b> vai aberta e sai 2.'
-          +'<br>Rende <b>1 frente, 2 costas e 2 mangas</b> por folha.'
-          +'<br><b>A + B = 3 peças</b>, faltando 1 par de mangas, que vem da faixa de mangas.</div>'
+          +'<div class="risco-pe">Mesmo desenho do A, mas <b>as duas peças são costas</b>: uma na dobra (sai 1) e uma aberta (sai 2).'
+          +'<br>Rende <b>3 costas e 2 mangas</b> por folha, nenhuma frente.'
+          +'<br><b>A frente nunca vai na dobra</b> — a dobra deixa um vinco no meio da peça que não sai. Por isso o encaixe que fecha a conta é este, e não o espelho do A.</div>'
           +'</div>';
       }
     }
@@ -1448,7 +1486,7 @@ function renderLotes(){
       var det='';
       if(gr.alt){
         det=' <span style="font-size:10.5px;color:#7B1FA2">'
-          +gr.alt.a+'× encaixe A + '+gr.alt.b+'× encaixe B'
+          +gr.alt.a+'× encaixe A + '+gr.alt.b+'× encaixe C'
           +(gr.alt.faixas?' · '+gr.alt.faixas+' faixa de manga ('+gr.alt.paresFalta+' pares)':'')
           +'</span>';
       }
@@ -1488,7 +1526,7 @@ function renderLotes(){
     var ll='';
     for(var g2=0;g2<so.grupos.length;g2++){
       var gg=so.grupos[g2];
-      var det2=gg.alt?' <span style="font-size:10.5px;color:#7B1FA2">'+gg.alt.a+'× A + '+gg.alt.b+'× B'
+      var det2=gg.alt?' <span style="font-size:10.5px;color:#7B1FA2">'+gg.alt.a+'× A + '+gg.alt.b+'× C'
         +(gg.alt.faixas?' · '+gg.alt.faixas+' faixa de manga':'')+'</span>':'';
       ll+='<div class="enc-row"><div class="c-chk"></div>'
         +'<div class="e-nm"><span class="badge '+gg.cls+'">'+gg.nome+'</span> <b>'+gg.tam+'</b>'+det2+'</div>'
@@ -1577,6 +1615,20 @@ function renderCompras(){
     +'<td class="r">'+tCor+'</td><td class="r">'+nm2(tUso)+' m</td><td class="r">'+tFal+' pç</td>'
     +'<td class="r">'+(tCom?nm2(tCom)+' m':'&mdash;')+'</td>'
     +'<td class="r">'+(tCom?'&asymp; '+nm1(tKg)+' kg':'&mdash;')+'</td></tr>':'';
+
+  var mh='';
+  var mp=moletomPlano();
+  for(var mi=0;mi<mp.length;mi++){
+    var m=mp[mi];
+    mh+='<tr'+(m.falta?' style="background:#fff5f5"':'')+'>'
+      +'<td><span class="dot" style="background:'+m.cor.dot+'"></span>Moletom '+m.cor.n+'</td>'
+      +'<td class="r">'+nm1(m.kg)+' kg</td>'
+      +'<td class="r">'+m.rende+' peças</td>'
+      +'<td class="r">'+m.pedido+' peças</td>'
+      +'<td class="r">'+(m.falta?'<span class="falta-sim">'+m.falta+' pç · '+nm1(m.faltaKg)+' kg</span>':'<span class="falta-nao">nenhuma</span>')+'</td></tr>';
+  }
+  var mb=document.getElementById('mol-body');
+  if(mb)mb.innerHTML=mh||'<tr><td colspan="5" style="text-align:center;color:#999;padding:18px">Sem moletom neste pedido.</td></tr>';
 
   document.getElementById('cmp-cards').innerHTML=
     card(tPed,'peças no pedido','')
