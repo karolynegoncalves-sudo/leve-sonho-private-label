@@ -283,9 +283,8 @@ table.tb-ficha tfoot td{background:#ececf2;font-weight:bold}
 <div id="consumo" class="section">
   <h2>Consumo por tamanho</h2>
   <div class="banner warn2" style="margin-top:0"><b>Malha BORDÔ — medida na mesa em 19/11/2026</b>, encaixe por encaixe, durante o corte do pedido. A largura é 94 cm, a mesma da PV preta de agosto, mas é <b>outro tecido</b> — por isso são dois botões de 0,94 m, e cada um tem a sua própria gramatura.<br><br>
-  <b>Rende de 18% a 37% melhor que a tabela de agosto</b>, porque agora todo encaixe sai <b>2 peças inteiras</b>; em agosto saía 1 peça + 1 frente que ia pro lixo.<br><br>
-  <b>Riscar baby look e camiseta do MESMO tamanho juntos economiza de 17% a 20%</b> (medido: M −19,3%, G −20,2%, GG −16,8%). Tamanhos diferentes rendem metade (−9,4%). Os números da tabela abaixo são o custo de cada peça <b>sozinha</b> — o desconto de combinar entra por fora.<br><br>
-  <b>Baby look P e PP usam a mesma medida</b> (0,95 m / 2 un): a Karol comparou os moldes, a diferença é mínima, e o molde do PP foi descartado em 19/11.</div>
+  <b>Rende de 18% a 38% melhor que a tabela de agosto</b>, porque agora todo encaixe sai <b>2 peças inteiras</b>; em agosto saía 1 peça + 1 frente que ia pro lixo.<br><br>
+  <b>Riscar baby look e camiseta do MESMO tamanho juntos economiza de 17% a 20%</b> (medido: M −19,3%, G −20,2%, GG −16,8%). No P o ganho foi só −9,4%: ali a baby look é bem mais curta que a camiseta e a sobra não fecha outro encaixe. Os números da tabela abaixo são o custo de cada peça <b>sozinha</b> — o desconto de combinar entra por fora.</div>
   <div id="consumo-topo"></div>
   <div class="tbl-wrap" id="consumo-body"></div>
 </div>
@@ -746,31 +745,30 @@ var REND={
 
     TODOS os encaixes saem 2 un. Em agosto saia 1 un + 1 FRENTE DESPERDICADA — e e
     dai que vem quase todo o ganho, nao de truque de encaixe.
-    Ganho por peca contra agosto:
-      bab PP -36,7% | bab M -21,4% | bab G -21,1% | bab GG -21,5%
+    Ganho por peca contra agosto (bab P comparada com a bab P de agosto, 0,77):
+      bab P  -38,3% | bab M -21,4% | bab G -21,1% | bab GG -21,5%
       cam P  -23,1% | cam M -18,3% | cam G -18,2% | cam GG -20,2%
     A baby look faz PLATO (fator ~1,573 sobre o len de agosto, do M pra cima);
-    a camiseta NAO e monotonica (piora no M/G, melhora no GG). O PP e caso especial
-    (fator 1,267): peca pequena encaixa muito melhor.
-
-    BABY LOOK P NAO MEDIDA: nao foi cortada. As 12 pecas que sairam com molde errado
-    (PP) cobriram a linha da P e foram etiquetadas P. Sem medida, a P nao entra aqui
-    — rend() devolve null e linhas() ignora, que e o comportamento certo.
+    a camiseta NAO e monotonica (piora no M/G, melhora no GG). O P e caso especial
+    (fator 1,234): peca pequena encaixa muito melhor.
 
     COMBINAR O MESMO TAMANHO das duas pecas economiza 17 a 20% (medido):
       M+M  2,95 -> 2,38  (-19,3%)
       G+G  3,07 -> 2,45  (-20,2%)
       GG+GG 3,15 -> 2,62 (-16,8%)   <- pior: peca grande sobra menos espaco
-    Tamanhos DIFERENTES rendem metade disso: PP+P 2,35 -> 2,13 (-9,4%).
+    O par do P ficou FORA da faixa: 2,35 -> 2,13, so -9,4%. Explicacao provavel
+    (HIPOTESE, nao medida): no P a baby look (0,95) e muito mais curta que a
+    camiseta (1,40) e a sobra nao fecha outro encaixe; no M/G/GG os dois encaixes
+    tem quase o mesmo comprimento.
     Economia real no pedido: 2,85 m no M, 1,86 m no G, 0,53 m no GG.
     Os valores abaixo sao o custo de cada peca SOZINHA — aplicar o desconto por fora. */
  '0.94b':{
   cam:{P:{len:1.40,un:2,fr:0,obs:'2 un · medido 19/11'},M:{len:1.52,un:2,fr:0,obs:'2 un · medido 19/11'},
        G:{len:1.57,un:2,fr:0,obs:'2 un · medido 19/11'},GG:{len:1.58,un:2,fr:0,obs:'2 un · medido 19/11'}},
-  /* P com a medida do PP: a Karol comparou os moldes em 19/11, a diferenca e minima,
-     adotou a mesma medida e DESCARTOU o molde do PP para nao haver mais confusao.
-     Foi no PP que os 0,95 m foram medidos; a P nunca chegou a ser cortada nesta malha. */
-  bab:{P:{len:0.95,un:2,fr:0,obs:'2 un · medido 19/11 (molde PP = P)'},M:{len:1.43,un:2,fr:0,obs:'2 un · medido 19/11'},
+  /* 19/11/2026: a Karol comparou os dois moldes pequenos, a diferenca era minima,
+     adotou uma medida so e descartou o molde menor. A grade da baby look nesta malha
+     vai de P a GG, e os 0,95 m sao a medida da P. */
+  bab:{P:{len:0.95,un:2,fr:0,obs:'2 un · medido 19/11'},M:{len:1.43,un:2,fr:0,obs:'2 un · medido 19/11'},
        G:{len:1.50,un:2,fr:0,obs:'2 un · medido 19/11'},GG:{len:1.57,un:2,fr:0,obs:'2 un · medido 19/11'}},
   reg:{},
   mol:{}
