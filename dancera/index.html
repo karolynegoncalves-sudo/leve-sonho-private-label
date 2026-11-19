@@ -210,6 +210,8 @@ table.tb-ficha tfoot td{background:#ececf2;font-weight:bold}
 <div class="wbar">
   <span class="lb">Largura do tecido:</span>
   <button class="wbtn on" id="w094" onclick="setW('0.94',this)">0,94 m — tecido em uso</button>
+  <button class="wbtn" id="w090" onclick="setW('0.90',this)">0,90 m — lote preto atual (pilotos)</button>
+  <button class="wbtn" id="w094b" onclick="setW('0.94b',this)">0,94 m — BORDÔ (medido 19/11)</button>
   <button class="wbtn" id="w122" onclick="setW('1.22',this)">1,22 m — amostra DanCERA</button>
   <button class="wbtn on" id="alt-btn" onclick="toggleAlternado()">Encaixe alternado: LIGADO</button>
   <span class="hint">Trocar a largura recalcula encaixe, consumo e lista de compras.</span>
@@ -233,7 +235,7 @@ table.tb-ficha tfoot td{background:#ececf2;font-weight:bold}
 <div class="tabs">
   <button class="tab active" onclick="showTab('pedido',this)">📋 Pedido</button>
   <button class="tab" onclick="showTab('enc',this)">✂️ Encaixe de Corte</button>
-  <button class="tab" onclick="showTab('risco',this)">📐 Risco do Encaixe</button>
+  <button class="tab" onclick="showTab('consumo',this)">📏 Consumo por Tamanho</button>
   <button class="tab" onclick="showTab('rend',this)">🧵 Rendimento &amp; Comparativo</button>
   <button class="tab" onclick="showTab('lotes',this)">🧩 Corte por Lote</button>
   <button class="tab" onclick="showTab('compras',this)">🛒 Lista de Compras</button>
@@ -278,12 +280,14 @@ table.tb-ficha tfoot td{background:#ececf2;font-weight:bold}
   <p class="note">Um bloco por peça e cor. Cada folha do infesto rende o número de peças medido na mesa; o infesto fecha em 5 folhas e o excedente abre um novo infesto. Marque a linha quando aquele grupo estiver cortado. <b>Frentes sobrando</b> é o desperdício que está dentro do preço no tecido de 0,94 m: uma frente por folha, sem costas para fechar peça. Alinhar as quantidades e medir um encaixe em par — como já existe no moletom — é o que zera essa coluna.</p>
 </div>
 
-<div id="risco" class="section">
-  <h2>Risco do Encaixe</h2>
-  <p class="note" style="margin-top:0">Camiseta e baby look vêm da <b>ficha técnica de modelagem da Leve Sonho</b> — é o vetor da modelagem, em escala dentro do risco, com a dobra, os rótulos e as cotas da ficha. <b>Moletom e tira de gola ainda são esquemas</b>, desenhados a partir das medidas: entram na ficha quando forem modelados.</p>
-  <div class="banner" style="margin-top:10px"><b>Os dois tecidos são tubulares.</b> A largura que aparece — 0,94 m ou 1,22 m — é a medida na mesa, com o tubo achatado, e o corte pega <b>duas camadas de uma vez</b>. Um molde riscado <b>aberto</b> sai em par; um molde riscado <b>na dobra</b> sai inteiro, só um. É por isso que a manga aparece uma vez só no risco — ela já sai em par.<br><br>
-  <b>De onde vem a frente que sobra:</b> no tecido de 0,94 m não cabem frente e costas abertas lado a lado. Então a <b>costas vai na dobra e sai 1</b>, e a <b>frente vai aberta e sai 2</b> — o que fecha uma camiseta e deixa uma frente sobrando. No tecido de 1,22 m as duas cabem abertas, saem 2 de cada, e o encaixe fecha <b>2 camisetas sem sobra nenhuma</b>.</div>
-  <div class="risco-grid" id="risco-body"></div>
+<div id="consumo" class="section">
+  <h2>Consumo por tamanho</h2>
+  <div class="banner warn2" style="margin-top:0"><b>Malha BORDÔ — medida na mesa em 19/11/2026</b>, encaixe por encaixe, durante o corte do pedido. A largura é 94 cm, a mesma da PV preta de agosto, mas é <b>outro tecido</b> — por isso são dois botões de 0,94 m, e cada um tem a sua própria gramatura.<br><br>
+  <b>Rende de 18% a 37% melhor que a tabela de agosto</b>, porque agora todo encaixe sai <b>2 peças inteiras</b>; em agosto saía 1 peça + 1 frente que ia pro lixo.<br><br>
+  <b>Riscar baby look e camiseta do MESMO tamanho juntos economiza de 17% a 20%</b> (medido: M −19,3%, G −20,2%, GG −16,8%). Tamanhos diferentes rendem metade (−9,4%). Os números da tabela abaixo são o custo de cada peça <b>sozinha</b> — o desconto de combinar entra por fora.<br><br>
+  <b>Baby look P e PP usam a mesma medida</b> (0,95 m / 2 un): a Karol comparou os moldes, a diferença é mínima, e o molde do PP foi descartado em 19/11.</div>
+  <div id="consumo-topo"></div>
+  <div class="tbl-wrap" id="consumo-body"></div>
 </div>
 
 <div id="rend" class="section">
@@ -451,6 +455,10 @@ var COLORS=[{k:'preto',n:'Preto',dot:'#222'},{k:'branco',n:'Branco',dot:'#fff'}]
 /* pv = peça feita em malha PV. Moletom é PA 2 cabos, outro tecido. */
 var PECAS=[
  {k:'cam',n:'Camiseta',cls:'b-cam',pv:1},
+ /* 05/11/2026: camiseta INFANTIL e produto novo (piloto), grade P/M/G/GG em letra.
+    Medida so na largura de 0,90 m — nas vistas de 0,94 e 1,22 ela nao aparece,
+    porque rend() devolve null e linhas() ignora combinacao sem medida. */
+ {k:'cai',n:'Camiseta infantil',cls:'b-cam',pv:1},
  {k:'bab',n:'Baby look',cls:'b-bab',pv:1},
  {k:'reg',n:'Regata',cls:'b-reg',pv:1},
  {k:'mol',n:'Moletom fem. gola careca',cls:'b-mol',pv:0,tecido:'PA 2 cabos'}
@@ -462,6 +470,11 @@ function ehPV(pk){for(var i=0;i<PECAS.length;i++){if(PECAS[i].k===pk)return !!PE
    convertemos para metros conforme a largura escolhida. */
 var PV_M_POR_KG_094=2.5, PV_LARG_REF=0.94;
 var PV_AREA_KG=PV_M_POR_KG_094*PV_LARG_REF;           /* 2,35 m² por kg */
+/* ATENCAO (05/11/2026): os 2,5 m/kg foram medidos no LOTE de 0,94 m. Como largura
+   e dado do lote, a gramatura do lote de 0,90 NAO foi verificada — o 2,35 m2/kg
+   esta sendo aplicado a ele por falta de medida melhor. Para fechar: pesar a sobra
+   dos 5 kg do lote Preto 2 depois do corte de 05/11 e comparar com o consumo
+   teorico (1,49 kg). m/kg = 2,35 / largura -> a 0,90 da 2,61 m/kg. */
 /* comprado pela DanCERA na Leve Sonho; usado_m medido na largura de referência */
 /* A malha chega em LOTES. Peca e tira tem que sair do MESMO lote (tom),
    e um tamanho inteiro nao pode ser dividido entre lotes — senao a mesma
@@ -474,6 +487,11 @@ var LOTES=[
  {id:'Preto 2',  cor:'preto',  kg:5, usado_m:0, nota:'intacto, nao usado no pedido anterior'},
  {id:'Preto 1 (resto)',  cor:'preto',  kg:0, usado_m:0, nota:'sobra do PL-DAN-0003 — A PESAR'},
  {id:'Branco 1 (resto)', cor:'branco', kg:0, usado_m:0, nota:'sobra do PL-DAN-0003 — A PESAR'}
+ /* 22/10/2026: o PL-DAN-0004 AINDA NAO FOI CORTADO. Entao este saldo esta todo
+    comprometido com ele — nao e sobra livre para o pedido seguinte. O pedido novo
+    (baby look P/M, e o marsala) so pode contar com o que passar daqui.
+    Marsala: a Milena comprou 11 kg em 21/10. Nao lancado ainda — falta a Karol
+    confirmar o peso e a largura, que ela deixou para quando subir o pedido novo. */
 ];
 
 /* Moletom gola careca: comprado por quilo, e o rendimento e contado em PECAS por kg,
@@ -498,8 +516,21 @@ function lotesDaCor(ck){
   for(var i=0;i<LOTES.length;i++)if(LOTES[i].cor===ck)r.push(LOTES[i]);
   return r;
 }
+/* 19/11/2026 — GRAMATURA E POR TECIDO, NAO POR LARGURA.
+   Antes existia so o PV_AREA_KG global (2,35 m2/kg, da PV PRETA de agosto) convertendo
+   metro em quilo em TODAS as larguras. A bordo foi MEDIDA em 3,366 m2/kg (rolo de
+   39,25 m rendido de 10,960 kg), 43% mais leve — com o valor fixo, a Lista de Compras
+   pediria ~43% mais malha do que o necessario para ela.
+   areaKg() devolve a gramatura do tecido ATIVO. Larguras sem medida caem no padrao. */
+var AREA_KG_LARG={
+  '0.94' :2.35,    /* PV preta, agosto — PRESUMIDO (1 kg = 2,5 m), nunca pesado */
+  '0.94b':3.366,   /* BORDO — MEDIDO 19/11/2026: 39,25 m de rolo / 10,960 kg */
+  '0.90' :2.35,    /* lote preto de 05/11 — herda o presumido, A PESAR */
+  '1.22' :2.35     /* amostra da cliente — herda o presumido */
+};
+function areaKg(){var v=AREA_KG_LARG[LARG];return v?v:PV_AREA_KG;}
 function metrosLote(l,larg){
-  return (l.kg*PV_AREA_KG - l.usado_m*PV_LARG_REF)/larg;
+  return (l.kg*areaKg() - l.usado_m*PV_LARG_REF)/larg;
 }
 function estoqueCor(ck,larg){
   var ls=lotesDaCor(ck);
@@ -507,7 +538,7 @@ function estoqueCor(ck,larg){
   var kg=0,usado=0,areaDisp=0;
   for(var i=0;i<ls.length;i++){
     kg+=ls[i].kg; usado+=ls[i].usado_m;
-    areaDisp+=ls[i].kg*PV_AREA_KG-ls[i].usado_m*PV_LARG_REF;
+    areaDisp+=ls[i].kg*areaKg()-ls[i].usado_m*PV_LARG_REF;
   }
   return {kg:kg,usado_m:usado,areaDisp:areaDisp,lotes:ls.length,
           metros:areaDisp/larg,metrosRef:areaDisp/PV_LARG_REF};
@@ -663,7 +694,13 @@ var FOLHAS_INFESTO=5;
 var PERDA=0.10;
 /* tira de gola (camiseta e baby look): 70 cm de comprimento x 3,5 cm de largura,
    cortada em pe (no sentido do fio) -> consome 0,70 m de comprimento de tecido.
-   Varias tiras cabem lado a lado na largura, entao uma faixa de 0,70 m atende muitas pecas. */
+   Varias tiras cabem lado a lado na largura, entao uma faixa de 0,70 m atende muitas pecas.
+   CONFIRMADO pela Karol em 22/10/2026: a baby look LEVA tira, igual a camiseta — era
+   duvida aberta, agora esta fechada e o calculo atual ja estava certo.
+   REGATA (22/10/2026): leva tira na GOLA *e* nas duas CAVAS. Nao e galao nas cavas.
+   Ainda NAO entra na conta porque falta medir o perimetro da cava na mesa. Quando
+   entrar, cada regata custa bem mais tira que uma camiseta: 1 gola + 2 cavas contra
+   so a gola. Nao estimar esse numero — medir. */
 var TIRA={len:0.70,larg:0.035,pecas:['cam','bab']};
 /* Perde-se 2 cm de cada lado na ourela e deixa-se 1 cm entre moldes.
    Vale para tudo que eu calculo do zero (tira, mangas avulsas). Os encaixes
@@ -701,6 +738,59 @@ var REND={
   reg:{},
   mol:{P:{len:1.82,un:2,fr:0,obs:'encaixe em par, sem sobra; avulso sai 1,20 m · LARGURA A CONFIRMAR'}}
  },
+ /* ---- BORDO, 94 cm na mesa (tubular), lote de 10,960 kg da Milena ----
+    MEDIDO NA MESA pela Karol em 19/11/2026, durante o corte do PL-DAN-0006.
+    Chave separada de '0.94' DE PROPOSITO: aquele e a PV PRETA de agosto, OUTRO
+    tecido na mesma largura. parseFloat('0.94b') = 0.94, entao as contas de area e
+    metragem saem certas.
+
+    TODOS os encaixes saem 2 un. Em agosto saia 1 un + 1 FRENTE DESPERDICADA — e e
+    dai que vem quase todo o ganho, nao de truque de encaixe.
+    Ganho por peca contra agosto:
+      bab PP -36,7% | bab M -21,4% | bab G -21,1% | bab GG -21,5%
+      cam P  -23,1% | cam M -18,3% | cam G -18,2% | cam GG -20,2%
+    A baby look faz PLATO (fator ~1,573 sobre o len de agosto, do M pra cima);
+    a camiseta NAO e monotonica (piora no M/G, melhora no GG). O PP e caso especial
+    (fator 1,267): peca pequena encaixa muito melhor.
+
+    BABY LOOK P NAO MEDIDA: nao foi cortada. As 12 pecas que sairam com molde errado
+    (PP) cobriram a linha da P e foram etiquetadas P. Sem medida, a P nao entra aqui
+    — rend() devolve null e linhas() ignora, que e o comportamento certo.
+
+    COMBINAR O MESMO TAMANHO das duas pecas economiza 17 a 20% (medido):
+      M+M  2,95 -> 2,38  (-19,3%)
+      G+G  3,07 -> 2,45  (-20,2%)
+      GG+GG 3,15 -> 2,62 (-16,8%)   <- pior: peca grande sobra menos espaco
+    Tamanhos DIFERENTES rendem metade disso: PP+P 2,35 -> 2,13 (-9,4%).
+    Economia real no pedido: 2,85 m no M, 1,86 m no G, 0,53 m no GG.
+    Os valores abaixo sao o custo de cada peca SOZINHA — aplicar o desconto por fora. */
+ '0.94b':{
+  cam:{P:{len:1.40,un:2,fr:0,obs:'2 un · medido 19/11'},M:{len:1.52,un:2,fr:0,obs:'2 un · medido 19/11'},
+       G:{len:1.57,un:2,fr:0,obs:'2 un · medido 19/11'},GG:{len:1.58,un:2,fr:0,obs:'2 un · medido 19/11'}},
+  /* P com a medida do PP: a Karol comparou os moldes em 19/11, a diferenca e minima,
+     adotou a mesma medida e DESCARTOU o molde do PP para nao haver mais confusao.
+     Foi no PP que os 0,95 m foram medidos; a P nunca chegou a ser cortada nesta malha. */
+  bab:{P:{len:0.95,un:2,fr:0,obs:'2 un · medido 19/11 (molde PP = P)'},M:{len:1.43,un:2,fr:0,obs:'2 un · medido 19/11'},
+       G:{len:1.50,un:2,fr:0,obs:'2 un · medido 19/11'},GG:{len:1.57,un:2,fr:0,obs:'2 un · medido 19/11'}},
+  reg:{},
+  mol:{}
+ },
+ /* ---- LOTE DE 0,90 m (malha PV PRETA tubular da Milena) — MEDIDO NA MESA EM 05/11/2026 ----
+    Cortadas 10 pecas de piloto neste lote (2 un de cada linha abaixo).
+    LARGURA E DADO DO LOTE, nao um tipo de tecido: a Karol confirmou em 05/11 que
+    "cada malha tem uma largura". Medir a cada compra; nao reaproveitar len entre larguras.
+    A 0,90 estas pecas saem 2 un SEM SOBRA (frente e costas as duas abertas lado a lado).
+    A frente que sobra no 0,94 era da camiseta ADULTA, peca larga — infantil e regata nao tem. */
+ '0.90':{
+  cam:{},
+  bab:{},
+  cai:{P:{len:0.66,un:2,fr:0,obs:'2 un'},M:{len:0.75,un:2,fr:0,obs:'2 un'},G:{len:0.79,un:2,fr:0,obs:'2 un'},
+       GG:{len:1.04,un:2,fr:0,obs:'2 un · frente e costas EMPILHADAS, nao cabem lado a lado'}},
+  /* regata nadador com fenda nas costas. SO O P foi feito: piloto aguardando
+     aprovacao do modelo pela Milena; graduacao M/G/GG so depois. Nao estimar. */
+  reg:{P:{len:0.65,un:2,fr:0,obs:'2 un · piloto, modelo em aprovacao'}},
+  mol:{}
+ },
  '1.22':{
   cam:{P:{len:0.90,un:2,fr:0,obs:'2 un'},M:{len:0.92,un:2,fr:0,obs:'2 un'},G:{len:0.96,un:2,fr:0,obs:'2 un'},GG:{len:0.99,un:2,fr:0,obs:'2 un'}},
   bab:{PP:{len:0.86,un:2,fr:0,obs:'2 un'},P:{len:0.90,un:2,fr:0,obs:'2 un'},M:{len:0.93,un:2,fr:0,obs:'2 un'},G:{len:0.97,un:2,fr:0,obs:'2 un'},GG:{len:1.01,un:2,fr:0,obs:'2 un'}},
@@ -733,8 +823,15 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
 var DEFAULT_SYNC_URL='https://script.google.com/macros/s/AKfycbx3CT7Qd1mmIKV7k9EyUCAwyazeHEbMzOJRvBRmYgkERe5B4fgvLdJ9XR2CCVotIrG9/exec';
 var SYNC_URL_KEY='ls_sync_url', SYNC_USER_KEY='ls_sync_user', SYNC_POLL_MS=15000;
 var SYNC_NS='DANCERA_';
-var syncUrl=localStorage.getItem(SYNC_URL_KEY)||'';
-var syncUser=localStorage.getItem(SYNC_USER_KEY)||'';
+/* 05/11/2026: localStorage LANCA em origem data:, em file:// com site data
+   bloqueado e em janela privada. Sem try/catch aqui a excecao aborta o resto
+   do script: `quem` fica undefined e renderPedido morre, a tabela do pedido
+   nao desenha e parece erro de dado. Falhar aqui so quer dizer "sem config". */
+var syncUrl='', syncUser='';
+try{
+  syncUrl=localStorage.getItem(SYNC_URL_KEY)||'';
+  syncUser=localStorage.getItem(SYNC_USER_KEY)||'';
+}catch(e){}
 var syncTimer=null, syncInFlight=false;
 var quem={};   /* quem[chave] = {by, at} — mostrado ao lado da marcação */
 
@@ -749,15 +846,17 @@ function saveSyncConfig(){
   var n=document.getElementById('sync-user-input').value.replace(/^\s+|\s+$/g,'');
   if(u&&!n){alert('Ponha o seu nome — é ele que aparece ao lado do que você marcar.');return;}
   syncUrl=u;syncUser=n;
-  localStorage.setItem(SYNC_URL_KEY,syncUrl);
-  localStorage.setItem(SYNC_USER_KEY,syncUser);
+  try{
+    localStorage.setItem(SYNC_URL_KEY,syncUrl);
+    localStorage.setItem(SYNC_USER_KEY,syncUser);
+  }catch(e){}   /* nao grava neste navegador; a sessao atual continua valendo */
   document.getElementById('sync-panel').className='sync-panel';
   if(syncTimer)clearInterval(syncTimer);
   if(syncUrl){setSyncStatus('busy','Conectando...');syncPull(function(){startSyncPolling();});}
   else setSyncStatus('off','Sincronização desligada (só neste navegador)');
 }
 function desligarSync(){
-  syncUrl='';localStorage.setItem(SYNC_URL_KEY,'');
+  syncUrl='';try{localStorage.setItem(SYNC_URL_KEY,'');}catch(e){}
   if(syncTimer)clearInterval(syncTimer);
   document.getElementById('sync-panel').className='sync-panel';
   setSyncStatus('off','Sincronização desligada (só neste navegador)');
@@ -875,8 +974,13 @@ function orfas(){
 
 function setW(w,btn){
   LARG=w;
-  document.getElementById('w094').className='wbtn'+(w==='0.94'?' on':'');
-  document.getElementById('w122').className='wbtn'+(w==='1.22'?' on':'');
+  /* 19/11/2026: antes isto so acendia w094 e w122, entao o botao w090 (adicionado em
+     05/11) e o w094b NUNCA acendiam — a largura trocava, so o visual ficava errado.
+     CUIDADO: nao mexer no alt-btn, que tambem tem classe wbtn mas guarda o proprio
+     estado (encaixe alternado ligado/desligado). */
+  var ids=['w094','w094b','w090','w122'];
+  for(var i=0;i<ids.length;i++){var e=document.getElementById(ids[i]);if(e)e.className='wbtn';}
+  if(btn)btn.className='wbtn on';
   render();
 }
 function showTab(id,btn){
@@ -1202,7 +1306,9 @@ function renderRend(){
   for(var w=0;w<2;w++){
     var lg=w?'1.22':'0.94',tb=document.getElementById(w?'r122':'r094'),html='',larg=parseFloat(lg);
     for(var i=0;i<PECAS.length;i++){
-      var t=REND[lg][PECAS[i].k],first=1;
+      /* ||{} : peca pode nao ter medida NESTA largura (ex. camiseta infantil,
+         medida so a 0,90). Sem isso, t[SIZES[s]] lanca e a aba toda morre. */
+      var t=REND[lg][PECAS[i].k]||{},first=1;
       for(var s=0;s<SIZES.length;s++){
         var r=t[SIZES[s]];if(!r)continue;
         var mpp=r.len/r.un;
@@ -1219,7 +1325,9 @@ function renderRend(){
   for(var i2=0;i2<PECAS.length;i2++){
     var pk=PECAS[i2].k,first2=1;
     for(var s2=0;s2<SIZES.length;s2++){
-      var tam=SIZES[s2],ra=REND['0.94'][pk][tam],rb=REND['1.22'][pk][tam];
+      /* ||{} pelo mesmo motivo: o comparativo so cobre 0,94 x 1,22, e peca
+         medida em outra largura nao tem entrada nestas duas. */
+      var tam=SIZES[s2],ra=(REND['0.94'][pk]||{})[tam],rb=(REND['1.22'][pk]||{})[tam];
       if(!ra||!rb)continue;
       var ma=ra.len/ra.un,mb=rb.len/rb.un,aa=ma*0.94,ab=mb*1.22;
       s94+=ma;s122+=mb;a94+=aa;a122+=ab;n++;
@@ -1491,7 +1599,7 @@ function renderRisco(){
   if(!host)return;
   var larg=parseFloat(LARG),html='',sec='';
   for(var i=0;i<PECAS.length;i++){
-    var pk=PECAS[i].k,t=REND[LARG][pk],algum=0;
+    var pk=PECAS[i].k,t=REND[LARG][pk]||{},algum=0;   /* ||{}: peca sem medida nesta largura */
     if(pk==='mol')continue;   /* moletom fora do risco: e PA 2 cabos, ainda sem modelagem */
     for(var s=0;s<SIZES.length;s++){
       var tam=SIZES[s],r=t[tam];
@@ -1553,7 +1661,9 @@ function renderGanhoEstoque(){
   for(var i=0;i<PECAS.length;i++){
     var pk=PECAS[i].k,first=1;
     for(var s=0;s<SIZES.length;s++){
-      var tam=SIZES[s],ra=REND['0.94'][pk][tam],rb=REND['1.22'][pk][tam];
+      /* ||{}: o ganho compara 0,94 x 1,22; peca medida so em outra largura
+         (ex. camiseta infantil a 0,90) nao tem entrada nestas duas. */
+      var tam=SIZES[s],ra=(REND['0.94'][pk]||{})[tam],rb=(REND['1.22'][pk]||{})[tam];
       if(!ra||!rb)continue;
       var na=Math.floor(areaTot/((ra.len/ra.un)*0.94));
       var nb=Math.floor(areaTot/((rb.len/rb.un)*1.22));
@@ -1568,7 +1678,7 @@ function renderGanhoEstoque(){
   tb.innerHTML=html;
   document.getElementById('ganho-cards').innerHTML=
     card(nm2(areaTot)+' m²','malha PV disponível','')
-    +card(nm2(areaTot/PV_AREA_KG*1)+' kg','equivalente em quilo','teal')
+    +card(nm2(areaTot/areaKg()*1)+' kg','equivalente em quilo','teal')
     +(melhorNome?card('+'+melhorDif+' peças','ganho máximo — '+melhorNome,'grn'):'');
 }
 
@@ -1742,7 +1852,7 @@ function renderLotes(){
 
   var fh='',fPc=0,fCom=0,fKg=0;
   for(var s=0;s<r.sobra.length;s++){
-    var so=r.sobra[s], comprar=so.custo.metros*(1+PERDA), kg=comprar*larg/PV_AREA_KG;
+    var so=r.sobra[s], comprar=so.custo.metros*(1+PERDA), kg=comprar*larg/areaKg();
     fPc+=so.custo.pecas; fCom+=comprar; fKg+=kg;
     var ll='';
     for(var g2=0;g2<so.grupos.length;g2++){
@@ -1791,7 +1901,7 @@ function renderCompras(){
     eh+='<tr><td><span class="dot" style="background:'+(cor?cor.dot:'#999')+'"></span>Lote '+l.id
       +'<br><span style="font-size:10.5px;color:#777">'+l.nota+'</span></td>'
       +'<td class="r">'+nm1(l.kg)+' kg</td>'
-      +'<td class="r">'+nm2(l.kg*PV_AREA_KG/larg)+' m</td>'
+      +'<td class="r">'+nm2(l.kg*areaKg()/larg)+' m</td>'
       +'<td class="r">'+(l.usado_m?'&minus;'+nm2(l.usado_m)+' m':'&mdash;')+'</td>'
       +'<td class="r"><b>'+nm2(m)+' m</b></td></tr>';
   }
@@ -1820,7 +1930,7 @@ function renderCompras(){
   for(var c4=0;c4<COLORS.length;c4++){
     var e3=porCor[COLORS[c4].k];
     if(!e3.pedido)continue;
-    var comprar=e3.faltaM?e3.faltaM*(1+PERDA):0, kg=comprar*larg/PV_AREA_KG;
+    var comprar=e3.faltaM?e3.faltaM*(1+PERDA):0, kg=comprar*larg/areaKg();
     tPed+=e3.pedido;tCor+=e3.cortadas;tUso+=e3.usado;tDisp+=e3.disp;tFal+=e3.falta;tCom+=comprar;tKg+=kg;
     html+='<tr'+(e3.falta?' style="background:#fff5f5"':'')+'>'
       +'<td><span class="dot" style="background:'+e3.cor.dot+'"></span>Malha PV '+e3.cor.n+'</td>'
@@ -1858,7 +1968,44 @@ function renderCompras(){
     +(tFal?card(tFal,'peças aguardando compra','red')+card(nm1(tKg)+' kg','comprar','red')
           :card(0,'aguardando compra','grn'));
 }
-function render(){renderPedido();renderEnc();renderRisco();renderRend();renderLotes();renderCompras();renderFicha();}
+
+/* 19/11/2026: substitui a aba "Risco do Encaixe" (desenhos de molde, retirados a pedido
+   da Karol). Mostra o que a producao realmente usa: quanto cada tamanho come de tecido
+   na largura ATIVA, em metro, m2 e quilo. O quilo sai de areaKg(), que respeita a
+   gramatura de cada tecido — nao do 2,35 fixo da PV de agosto. */
+function renderConsumo(){
+  var el=document.getElementById('consumo-body'); if(!el)return;
+  var larg=parseFloat(LARG), ak=areaKg(), html='', n=0;
+  var topo=document.getElementById('consumo-topo');
+  if(topo)topo.innerHTML='<div class="sgrid" style="margin-top:12px">'
+    +card(nm2(larg)+' m','largura na mesa','teal')
+    +card(nm3(ak)+' m²/kg','rendimento da malha','grn')
+    +card(nm3(ak/larg)+' m/kg','metro linear por quilo','grn')
+    +'</div>';
+  html+='<table><thead><tr><th>Peça</th><th>Tam.</th><th class="r">Encaixe</th>'
+    +'<th class="r">Peças por encaixe</th><th class="r">m por peça</th>'
+    +'<th class="r">m² por peça</th><th class="r">kg por peça</th><th>Observação</th></tr></thead><tbody>';
+  for(var i=0;i<PECAS.length;i++){
+    var pk=PECAS[i].k, first=1;
+    for(var s=0;s<SIZES.length;s++){
+      var r=rend(pk,SIZES[s]); if(!r)continue;
+      var mpp=r.len/r.un, app=mpp*larg;
+      html+='<tr><td>'+(first?'<span class="badge '+PECAS[i].cls+'">'+PECAS[i].n+'</span>':'')+'</td>'
+        +'<td><b>'+SIZES[s]+'</b></td>'
+        +'<td class="r">'+nm2(r.len)+' m</td>'
+        +'<td class="r">'+r.un+'</td>'
+        +'<td class="r"><b>'+nm3(mpp)+' m</b></td>'
+        +'<td class="r">'+nm3(app)+'</td>'
+        +'<td class="r">'+nm3(app/ak)+'</td>'
+        +'<td style="white-space:normal;color:#777">'+(r.obs||'')+'</td></tr>';
+      first=0; n++;
+    }
+  }
+  html+='</tbody></table>';
+  el.innerHTML = n ? html : '<p class="note">Nenhuma medida de encaixe para esta largura.</p>';
+}
+
+function render(){renderPedido();renderEnc();renderConsumo();renderRend();renderLotes();renderCompras();renderFicha();}
 
 function exportState(){
   var txt=JSON.stringify({v:1,largura:LARG,qtd:st.qtd,cortado:st.cortado},null,2);
